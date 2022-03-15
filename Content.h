@@ -1,4 +1,4 @@
-#import "ContentMetalLayer.h"
+#import "ContentLayer.h"
 
 class Content {
     
@@ -13,7 +13,7 @@ class Content {
         int _height = 0;
         
         NSView *_view = nil;
-        ContentMetalLayer<Plane> *_layer = nullptr;
+        ContentLayer<Plane> *_layer = nullptr;
         
         float _tx = 0.0;
         float _ty = 0.0;
@@ -183,7 +183,7 @@ class Content {
             this->_view.wantsLayer = YES;
             this->_view.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.0 green:0.0 blue:0.0 alpha:1].CGColor;
             
-            this->_layer = new ContentMetalLayer<Plane>();
+            this->_layer = new ContentLayer<Plane>();
             if(this->_layer->init(this->_width,this->_height,@"content.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
                 
                 this->_layer->resolution(this->_width,this->_height);

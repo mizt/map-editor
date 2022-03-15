@@ -1,11 +1,11 @@
-#import "GuideMetalLayer.h"
+#import "GuideLayer.h"
 
 class Guide {
     
     private:
 
         NSView *_view = nil;
-        GuideMetalLayer<Plane> *_layer = nullptr;
+        GuideLayer<Plane> *_layer = nullptr;
         unsigned int *_texture = nullptr;
     
         int _frame = 0;
@@ -70,7 +70,7 @@ class Guide {
             this->_view.wantsLayer = YES;
             this->_view.layer.backgroundColor = [NSColor clearColor].CGColor;
             
-            this->_layer = new GuideMetalLayer<Plane>();
+            this->_layer = new GuideLayer<Plane>();
             if(this->_layer->init(STAGE_WIDTH,STAGE_HEIGHT,@"guide.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
                 this->_view.layer = this->_layer->layer();
             }

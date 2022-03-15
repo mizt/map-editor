@@ -1,5 +1,5 @@
 template <typename T>
-class GuideMetalLayer : public MetalBaseLayer<T> {
+class GuideLayer : public MetalBaseLayer<T> {
     
     private:
         
@@ -100,9 +100,9 @@ class GuideMetalLayer : public MetalBaseLayer<T> {
             return commandBuffer;
         }
         
-        GuideMetalLayer() : MetalBaseLayer<T>() {
+        GuideLayer() : MetalBaseLayer<T>() {
             this->_useArgumentEncoder = true;
         }
         
-        ~GuideMetalLayer() {}
+        ~GuideLayer() {}
 };

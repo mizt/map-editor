@@ -1,5 +1,5 @@
 template <typename T>
-class ContentMetalLayer : public MetalBaseLayer<T> {
+class ContentLayer : public MetalBaseLayer<T> {
     
     private:
         
@@ -136,10 +136,10 @@ class ContentMetalLayer : public MetalBaseLayer<T> {
             return commandBuffer;
         }
         
-        ContentMetalLayer() : MetalBaseLayer<T>() {
+        ContentLayer() : MetalBaseLayer<T>() {
             this->_useArgumentEncoder = true;
         }
         
-        ~ContentMetalLayer() {}
+        ~ContentLayer() {}
 };
 
