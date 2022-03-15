@@ -89,9 +89,7 @@ class MetalBaseLayer {
         virtual bool setupShader() {
             
             this->_renderPipelineDescriptor = [MTLRenderPipelineDescriptor new];
-            //this->_renderPipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
             this->_renderPipelineDescriptor.depthAttachmentPixelFormat = (this->DEPTH_TEST)?MTLPixelFormatDepth32Float_Stencil8:MTLPixelFormatInvalid;
-
             this->_renderPipelineDescriptor.stencilAttachmentPixelFormat = MTLPixelFormatInvalid;
             this->_renderPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
             if(!this->_blendingEnabled) {

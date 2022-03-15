@@ -22,9 +22,19 @@
 
 #import "Win.h"
 
+enum Mode {
+    PREVIEW = 0,
+    COPY_AND_PASTE = 1
+};
+
+namespace Config {
+    unsigned int mode = Mode::COPY_AND_PASTE;
+};
+
 class App {
     
     private:
+    
     
         Win *win;
         NSView *view;
@@ -109,13 +119,33 @@ class App {
               
             if(DroppableView) {
                 
-                Utils::addMethod(DroppableView,@"mouseDown:",^(id me,NSEvent *theEvent) {
-                    if(this->content) {
-                        this->isDrag = true;
-                        this->mouse = [NSEvent mouseLocation];
-                        this->point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                    }
-                },"@@:@");
+                if(Config::mode!=Mode::PREVIEW) {
+                
+                    Utils::addMethod(DroppableView,@"mouseDown:",^(id me,NSEvent *theEvent) {
+                        if(this->content) {
+                            this->isDrag = true;
+                            this->mouse = [NSEvent mouseLocation];
+                            this->point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
+                        }
+                    },"@@:@");
+                    
+                }
+                
+                if(Config::mode==Mode::COPY_AND_PASTE) {
+                    
+                    Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
+                        if(this->isDrag==false&&this->content) {
+                            if(theEvent.buttonNumber==2) {
+                                this->content->translate(
+                                    this->content->tx()+theEvent.deltaX,
+                                    this->content->ty()-theEvent.deltaY);
+                                this->content->transform();
+                            }
+                        }
+                    },"@@:@");
+                
+                }
+                
                 
                 Utils::addMethod(DroppableView,@"rightMouseDown:",^(id me,NSEvent *theEvent) {
                     if(this->isSelected) {
@@ -129,16 +159,6 @@ class App {
                     }
                 },"@@:@");
                 
-                Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
-                    if(this->isDrag==false&&this->content) {
-                        if(theEvent.buttonNumber==2) {
-                            this->content->translate(
-                                this->content->tx()+theEvent.deltaX,
-                                this->content->ty()-theEvent.deltaY);
-                            this->content->transform();
-                        }
-                    }
-                },"@@:@");
                 
                 Utils::addMethod(DroppableView,@"scrollWheel:",^(id me,NSEvent *theEvent) {
                     if(this->isDrag==false&&this->content) {
@@ -210,73 +230,79 @@ class App {
                 dispatch_source_set_timer(this->timer,dispatch_time(0,0),(1.0/30.0)*1000000000,0);
                 dispatch_source_set_event_handler(this->timer,^{
                     
-                    if(this->content&&this->isDrag) {
+                    if(Config::mode!=Mode::PREVIEW) {
                         
-                        float left = this->point.x;
-                        float top  = this->point.y;
-                        
-                        NSPoint mouseLoc = [NSEvent mouseLocation];
-                        float right = left+(mouseLoc.x-this->mouse.x);
-                        float bottom = top+(this->mouse.y-mouseLoc.y);
-                        
-                        if(left>right) {
-                            float tmp = left;
-                            left = right;
-                            right = tmp;
+                        if(this->content&&this->isDrag) {
+                            
+                            float left = this->point.x;
+                            float top  = this->point.y;
+                            
+                            NSPoint mouseLoc = [NSEvent mouseLocation];
+                            float right = left+(mouseLoc.x-this->mouse.x);
+                            float bottom = top+(this->mouse.y-mouseLoc.y);
+                            
+                            if(left>right) {
+                                float tmp = left;
+                                left = right;
+                                right = tmp;
+                            }
+                            
+                            if(top>bottom) {
+                                float tmp = top;
+                                top = bottom;
+                                bottom = tmp;
+                            }
+                            
+                            this->clip();
+                            
+                            
+                            left = CLAMP(left,this->clipped.left,this->clipped.right);
+                            right = CLAMP(right,this->clipped.left,this->clipped.right);
+
+                            top = CLAMP(top,this->clipped.top,this->clipped.bottom);
+                            bottom = CLAMP(bottom,this->clipped.top,this->clipped.bottom);
+
+                            
+                            if([NSEvent pressedMouseButtons]==0) {
+                               
+                                this->isDrag = false;
+                                
+                                this->guide->clear();
+                                this->guide->draw();
+                                
+                                this->content->copy();
+                                
+                                float zoom = 1.0/this->content->scale();
+                                float x = (left-this->LEFT())*zoom;
+                                float y = (top-(STAGE_HEIGHT-this->TOP()))*zoom;
+                                                          
+                                this->selected = {
+                                    .left=(int)x,
+                                    .top=(int)y,
+                                    .right=(int)(x+(right-left)*zoom),
+                                    .bottom=(int)(y+(bottom-top)*zoom)
+                                };
+                                  
+                                this->selected.left = CLAMP(this->selected.left,0,this->content->width()-1);
+                                this->selected.right = CLAMP(this->selected.right,0,this->content->width()-1);
+
+                                this->selected.top = CLAMP(this->selected.top,0,this->content->height()-1);
+                                this->selected.bottom = CLAMP(this->selected.bottom,0,this->content->height()-1);
+
+                                this->isSelected = true;
+                            }
+                            else {
+                                
+                                this->guide->clear();
+                                this->guide->update(left,top,right,bottom);
+                                this->guide->draw();
+                                
+                            }
                         }
                         
-                        if(top>bottom) {
-                            float tmp = top;
-                            top = bottom;
-                            bottom = tmp;
-                        }
-                        
-                        this->clip();
-                        
-                        
-                        left = CLAMP(left,this->clipped.left,this->clipped.right);
-                        right = CLAMP(right,this->clipped.left,this->clipped.right);
-
-                        top = CLAMP(top,this->clipped.top,this->clipped.bottom);
-                        bottom = CLAMP(bottom,this->clipped.top,this->clipped.bottom);
-
-                        
-                        if([NSEvent pressedMouseButtons]==0) {
-                           
-                            this->isDrag = false;
-                            
-                            this->guide->clear();
-                            this->guide->draw();
-                            
-                            this->content->copy();
-                            
-                            float zoom = 1.0/this->content->scale();
-                            float x = (left-this->LEFT())*zoom;
-                            float y = (top-(STAGE_HEIGHT-this->TOP()))*zoom;
-                                                      
-                            this->selected = {
-                                .left=(int)x,
-                                .top=(int)y,
-                                .right=(int)(x+(right-left)*zoom),
-                                .bottom=(int)(y+(bottom-top)*zoom)
-                            };
-                              
-                            this->selected.left = CLAMP(this->selected.left,0,this->content->width()-1);
-                            this->selected.right = CLAMP(this->selected.right,0,this->content->width()-1);
-
-                            this->selected.top = CLAMP(this->selected.top,0,this->content->height()-1);
-                            this->selected.bottom = CLAMP(this->selected.bottom,0,this->content->height()-1);
-
-                            this->isSelected = true;
-                        }
-                        else {
-                            
-                            this->guide->clear();
-                            this->guide->update(left,top,right,bottom);
-                            this->guide->draw();
-                            
-                        }
                     }
+                    
+                    
                 });
                 if(this->timer) dispatch_resume(this->timer);
             }
@@ -295,7 +321,6 @@ class App {
             delete this->guide;
             delete this->footer;
             delete this->win;
-            
             
         }
 };
