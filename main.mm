@@ -29,6 +29,8 @@
 
 #import "Win.h"
 
+#define FPS 60.0
+
 enum Mode {
     PREVIEW = 0,
     COPY_AND_PASTE = 1,
@@ -129,31 +131,26 @@ class App {
             Class DroppableView = objc_getClass("DroppableView");
               
             if(DroppableView) {
-                
                 if(Config::mode!=Mode::PREVIEW) {
-                
                     Utils::addMethod(DroppableView,@"mouseDown:",^(id me,NSEvent *theEvent) {
-                        
                         
                         this->mouse = [NSEvent mouseLocation];
                         this->point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                   
-                        if(this->content) {
+                                          
+                        this->isDrag = true;
+                        
+                        if(Config::mode==Mode::COPY_AND_PASTE) {
                             this->isDrag = true;
                         }
-                        else if(this->smudge) {
-                                                    
+                        else if(Config::mode==Mode::SMUDGE) {
+                            float px = this->point.x+this->mouse.x;
+                            float py = this->point.y+(STAGE_HEIGHT-this->mouse.y);
                             float zoom = 1.0/this->content->scale();
                             float left = this->LEFT();
                             float top = (STAGE_HEIGHT-this->TOP());
-                            float px = (theEvent.locationInWindow.x);
-                            float py = ((STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
                             this->smudge->reset((px-left)*zoom,(py-top)*zoom);
-                            
                         }
-                        
                     },"@@:@");
-                    
                 }
                 
                 Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
@@ -256,7 +253,7 @@ class App {
                 this->win->addChild(this->footer->view());
 
                 this->timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,0,0,dispatch_queue_create("ENTER_FRAME",0));
-                dispatch_source_set_timer(this->timer,dispatch_time(0,0),(1.0/30.0)*1000000000,0);
+                dispatch_source_set_timer(this->timer,dispatch_time(0,0),(1.0/FPS)*1000000000,0);
                 dispatch_source_set_event_handler(this->timer,^{
                     
                     if(Config::mode!=Mode::PREVIEW) {
@@ -268,15 +265,12 @@ class App {
                                 if([NSEvent pressedMouseButtons]==1) {
                                                                         
                                     if(this->smudge) {
-                                        
                                         NSPoint mouseLoc = [NSEvent mouseLocation];
                                         float px = this->point.x+(mouseLoc.x-this->mouse.x);
                                         float py = this->point.y+(this->mouse.y-mouseLoc.y);
-                                                                                
                                         float zoom = 1.0/this->content->scale();
                                         float left = this->LEFT();
                                         float top = (STAGE_HEIGHT-this->TOP());
-                                                                 
                                         this->content->copy(this->smudge->map((px-left)*zoom,(py-top)*zoom));
                                         this->content->draw(this->type);
                                     }
