@@ -102,7 +102,6 @@ class Content {
         float scale() { return this->_scale; }
         
         void transform() {
-            
             if(this->_layer) {
                 this->_layer->layer().anchorPoint = CGPointMake(0.5,0.5);
                 this->_layer->layer().position = CGPointMake(this->_width>>1,this->_height>>1);
@@ -123,6 +122,14 @@ class Content {
                 this->_layer->cleanup();
             });
         }
+
+        void copy(unsigned int *map) {
+            for(int k=0; k<this->_width*this->_height; k++) {
+                this->MAP[k] = map[k];
+            }
+            this->_layer->MAP(this->MAP);
+        }
+    
     
         void copy(Utils::Bounds *selected, int ox, int oy) {
             int top = selected->top;

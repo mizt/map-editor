@@ -23,7 +23,7 @@ vertex VertInOut vertexShader(constant float4 *pos[[buffer(0)]], constant packed
 }
 
 fragment float4 fragmentShader(VertInOut inFrag[[stage_in]], constant FragmentShaderArguments &args[[buffer(0)]]) {
-    constexpr sampler sampler(address::clamp_to_edge, filter::nearest);
+    constexpr sampler sampler(address::clamp_to_edge, filter::linear);
     
     if(args.type[0]==Type::RGB) {
         
