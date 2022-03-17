@@ -45,15 +45,15 @@ class App {
     
     private:
         
-        Win *win;
-        NSView *view;
-        Guide *guide = nullptr;
-        Content *content = nullptr;
-        Footer *footer = new Footer();
+        Win *_win;
+        NSView *_view;
+        Guide *_guide = nullptr;
+        Content *_content = nullptr;
+        Footer *_footer = new Footer();
 
-        Smudge *smudge = nullptr;
+        Smudge *_smudge = nullptr;
     
-        dispatch_source_t timer;
+        dispatch_source_t _timer;
     
         bool _isDrop = true;
         bool _isDrag = false;
@@ -65,7 +65,7 @@ class App {
             NSPoint mouseLoc = [NSEvent mouseLocation];
             float px = this->_point.x+(mouseLoc.x-this->_mouse.x);
             float py = this->_point.y+(this->_mouse.y-mouseLoc.y);
-            float zoom = 1.0/this->content->scale();
+            float zoom = 1.0/this->_content->scale();
             float left = this->LEFT();
             float top = (STAGE_HEIGHT-this->TOP());
             *x = (px-left)*zoom;
@@ -79,19 +79,19 @@ class App {
         float _wheel = 0.5;
     
         float LEFT() {
-            return this->content->tx()+this->content->width()*(1.0-this->content->scale())*0.5;
+            return this->_content->tx()+this->_content->width()*(1.0-this->_content->scale())*0.5;
         }
 
         float RIGHT() {
-            return this->LEFT()+this->content->width()*this->content->scale();
+            return this->LEFT()+this->_content->width()*this->_content->scale();
         }
     
         float BOTTOM() {
-            return this->content->ty()+this->content->height()*(1.0-this->content->scale())*0.5;
+            return this->_content->ty()+this->_content->height()*(1.0-this->_content->scale())*0.5;
         }
 
         float TOP() {
-            return this->BOTTOM()+this->content->height()*this->content->scale();
+            return this->BOTTOM()+this->_content->height()*this->_content->scale();
         }
 
         void clip() {
@@ -123,29 +123,27 @@ class App {
         
         App() {
             
-      
-            this->win = new Win();
+            this->_win = new Win();
             
             this->addEventListener(@"RGB",^(NSNotification *){
                 this->_type = Type::RGB;
-                if(this->content) this->content->draw(Type::RGB);
+                if(this->_content) this->_content->draw(Type::RGB);
             });
             
             this->addEventListener(@"MAP",^(NSNotification *){
                 this->_type = Type::MAP;
-                if(this->content) this->content->draw(Type::MAP);
+                if(this->_content) this->_content->draw(Type::MAP);
             });
             
             if(objc_getClass("DroppableView")==nil) { objc_registerClassPair(objc_allocateClassPair(objc_getClass("NSView"),"DroppableView",0)); }
             Class DroppableView = objc_getClass("DroppableView");
               
             if(DroppableView) {
-                if(Config::mode!=Mode::PREVIEW) {
+                if(this->_content&&Config::mode!=Mode::PREVIEW) {
                     Utils::addMethod(DroppableView,@"mouseDown:",^(id me,NSEvent *theEvent) {
                         
                         this->_mouse = [NSEvent mouseLocation];
                         this->_point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                                          
                         this->_isDrag = true;
                         
                         if(Config::mode==Mode::COPY_AND_PASTE) {
@@ -155,18 +153,18 @@ class App {
                             float x = 0;
                             float y = 0;
                             this->mouse(&x,&y);
-                            this->smudge->reset(x,y);
+                            this->_smudge->reset(x,y);
                         }
                     },"@@:@");
                 }
                 
                 Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
-                    if(this->_isDrag==false&&this->content) {
+                    if(this->_isDrag==false&&this->_content) {
                         if(theEvent.buttonNumber==2) {
-                            this->content->translate(
-                                this->content->tx()+theEvent.deltaX,
-                                this->content->ty()-theEvent.deltaY);
-                            this->content->transform();
+                            this->_content->translate(
+                            this->_content->tx()+theEvent.deltaX,
+                            this->_content->ty()-theEvent.deltaY);
+                            this->_content->transform();
                         }
                     }
                 },"@@:@");
@@ -174,30 +172,30 @@ class App {
                 if(Config::mode==Mode::COPY_AND_PASTE) {
                     Utils::addMethod(DroppableView,@"rightMouseDown:",^(id me,NSEvent *theEvent) {
                         if(this->_isSelected) {
-                            float zoom = 1.0/this->content->scale();
+                            float zoom = 1.0/this->_content->scale();
                             float left = this->LEFT();
                             float top = (STAGE_HEIGHT-this->TOP());
                             float px = (theEvent.locationInWindow.x);
                             float py = ((STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                            this->content->copy(&this->_selected,(px-left)*zoom,(py-top)*zoom);
-                            this->content->draw(this->_type);
+                            this->_content->copy(&this->_selected,(px-left)*zoom,(py-top)*zoom);
+                            this->_content->draw(this->_type);
                         }
                     },"@@:@");
                 }
                 
                 Utils::addMethod(DroppableView,@"scrollWheel:",^(id me,NSEvent *theEvent) {
-                    if(this->_isDrag==false&&this->content) {
+                    if(this->_isDrag==false&&this->_content) {
                         float divsion = 4.0;
                         this->_wheel+=(theEvent.deltaY/100.0)*8.0;
                         this->_wheel = (this->_wheel<=0.0)?0.0:(this->_wheel>=1.0)?1.0:this->_wheel;
                         if(this->_wheel>0.5) {
-                            this->content->scale(((int)((1.0+(this->_wheel-0.5)*2.0)*divsion))*(1.0/divsion));
+                            this->_content->scale(((int)((1.0+(this->_wheel-0.5)*2.0)*divsion))*(1.0/divsion));
                         }
                         else {
-                            this->content->scale(((int)((0.25+(0.75*2.0)*this->_wheel)*divsion))*(1.0/divsion));
+                            this->_content->scale(((int)((0.25+(0.75*2.0)*this->_wheel)*divsion))*(1.0/divsion));
                         }
-                        this->content->transform();
-                        this->footer->scale((int)(this->content->scale()*100.0));
+                        this->_content->transform();
+                        this->_footer->scale((int)(this->_content->scale()*100.0));
                     }
                 },"@@:@");
                 
@@ -211,7 +209,7 @@ class App {
                 },"@@:@");
                 
                 Utils::addMethod(DroppableView,@"concludeDragOperation:",^(id me,id<NSDraggingInfo> sender) {
-                    if(this->content==nil) {
+                    if(this->_content==nil) {
                         this->_isDrop = false;
                         NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
                         if([path.pathExtension isEqualToString:@"mov"]) {
@@ -223,16 +221,16 @@ class App {
                                     if(w>=1&&h>=1&&w==parser->width(Type::MAP)&&h==parser->height(Type::MAP)) {
                                         
                                         NSString *path = FileManager::addPlatform(FileManager::path(@"smudge.metallib",[[NSBundle mainBundle] bundleIdentifier]));
-                                                                                                         
-                                        if(this->smudge) delete[] this->smudge;
-                                        this->smudge = new Smudge(w,h,path);
-                                        
-                                        this->content = new Content(w,h);
-                                        [this->view addSubview:this->content->view()];
+
+                                        if(this->_smudge) delete[] this->_smudge;
+                                        this->_smudge = new Smudge(w,h,path);
+
+                                        this->_content = new Content(w,h);
+                                        [this->_view addSubview:this->_content->view()];
                                         int frame = 0;
-                                        this->content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
-                                        this->content->draw(this->_type);
-                                        this->content->transform();
+                                        this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
+                                        this->_content->draw(this->_type);
+                                        this->_content->transform();
                                     }
                                 }
                             }
@@ -246,35 +244,35 @@ class App {
                     
                 },"@@:@");
                 
-                this->view = (NSView *)[[DroppableView alloc] initWithFrame:CGRectMake(0,0,STAGE_WIDTH,STAGE_HEIGHT)];
-                [this->view registerForDraggedTypes:[NSArray arrayWithObjects:NSPasteboardTypeFileURL,nil]];
-                this->view.wantsLayer = YES;
-                this->view.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.5 green:0.5 blue:0.5 alpha:1].CGColor;
+                this->_view = (NSView *)[[DroppableView alloc] initWithFrame:CGRectMake(0,0,STAGE_WIDTH,STAGE_HEIGHT)];
+                [this->_view registerForDraggedTypes:[NSArray arrayWithObjects:NSPasteboardTypeFileURL,nil]];
+                this->_view.wantsLayer = YES;
+                this->_view.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.5 green:0.5 blue:0.5 alpha:1].CGColor;
                 
-                this->guide = new Guide();
+                this->_guide = new Guide();
               
-                this->win->addChild(this->view);
-                this->win->addChild(this->guide->view());
-                this->win->addChild(this->footer->view());
+                this->_win->addChild(this->_view);
+                this->_win->addChild(this->_guide->view());
+                this->_win->addChild(this->_footer->view());
 
-                this->timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,0,0,dispatch_queue_create("ENTER_FRAME",0));
-                dispatch_source_set_timer(this->timer,dispatch_time(0,0),(1.0/FPS)*1000000000,0);
-                dispatch_source_set_event_handler(this->timer,^{
+                this->_timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,0,0,dispatch_queue_create("ENTER_FRAME",0));
+                dispatch_source_set_timer(this->_timer,dispatch_time(0,0),(1.0/FPS)*1000000000,0);
+                dispatch_source_set_event_handler(this->_timer,^{
                     
                     if(Config::mode!=Mode::PREVIEW) {
                         
-                        if(this->content&&this->_isDrag) {
+                        if(this->_content&&this->_isDrag) {
                             
                             if(Config::mode==Mode::SMUDGE) {
                                 
                                 if([NSEvent pressedMouseButtons]==1) {
                                                                         
-                                    if(this->smudge) {
+                                    if(this->_smudge) {
                                         float x = 0;
                                         float y = 0;
                                         this->mouse(&x,&y);
-                                        this->content->copy(this->smudge->map(x,y));
-                                        this->content->draw(this->_type);
+                                        this->_content->copy(this->_smudge->map(x,y));
+                                        this->_content->draw(this->_type);
                                     }
                                     
                                 }
@@ -316,12 +314,12 @@ class App {
                                    
                                     this->_isDrag = false;
                                     
-                                    this->guide->clear();
-                                    this->guide->draw();
+                                    this->_guide->clear();
+                                    this->_guide->draw();
                                     
-                                    this->content->copy();
+                                    this->_content->copy();
                                     
-                                    float zoom = 1.0/this->content->scale();
+                                    float zoom = 1.0/this->_content->scale();
                                     float x = (left-this->LEFT())*zoom;
                                     float y = (top-(STAGE_HEIGHT-this->TOP()))*zoom;
                                                               
@@ -332,19 +330,19 @@ class App {
                                         .bottom=(int)(y+(bottom-top)*zoom)
                                     };
                                       
-                                    this->_selected.left = CLAMP(this->_selected.left,0,this->content->width()-1);
-                                    this->_selected.right = CLAMP(this->_selected.right,0,this->content->width()-1);
+                                    this->_selected.left = CLAMP(this->_selected.left,0,this->_content->width()-1);
+                                    this->_selected.right = CLAMP(this->_selected.right,0,this->_content->width()-1);
 
-                                    this->_selected.top = CLAMP(this->_selected.top,0,this->content->height()-1);
-                                    this->_selected.bottom = CLAMP(this->_selected.bottom,0,this->content->height()-1);
+                                    this->_selected.top = CLAMP(this->_selected.top,0,this->_content->height()-1);
+                                    this->_selected.bottom = CLAMP(this->_selected.bottom,0,this->_content->height()-1);
 
                                     this->_isSelected = true;
                                 }
                                 else {
                                     
-                                    this->guide->clear();
-                                    this->guide->update(left,top,right,bottom);
-                                    this->guide->draw();
+                                    this->_guide->clear();
+                                    this->_guide->update(left,top,right,bottom);
+                                    this->_guide->draw();
                                     
                                 }
                             }
@@ -352,23 +350,23 @@ class App {
                     }
                     
                 });
-                if(this->timer) dispatch_resume(this->timer);
+                if(this->_timer) dispatch_resume(this->_timer);
             }
         }
         
         ~App() {
             
-            if(this->timer){
-                dispatch_source_cancel(this->timer);
-                this->timer = nullptr;
+            if(this->_timer){
+                dispatch_source_cancel(this->_timer);
+                this->_timer = nullptr;
             }
             
-            [this->view removeFromSuperview];
+            [this->_view removeFromSuperview];
             
-            delete this->content;
-            delete this->guide;
-            delete this->footer;
-            delete this->win;
+            delete this->_content;
+            delete this->_guide;
+            delete this->_footer;
+            delete this->_win;
             
         }
 };
