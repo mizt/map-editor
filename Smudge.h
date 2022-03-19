@@ -2,6 +2,15 @@ class Smudge : public MapRG16UnormBase {
     
     public:
     
+        void resetMap() {
+            for(int i=0; i<this->height; i++) {
+                for(int j=0; j<this->width; j++) {
+                    this->_map[0][i*this->width+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
+                    this->_map[1][i*this->width+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
+                }
+            }
+        }
+        
         void reset(float mx,float my) {
             float *prevCursor = (float *)[this->_params[0] contents];
             float *cursor = (float *)[this->_params[1] contents];

@@ -118,8 +118,18 @@ class App {
                 usingBlock:on
             ];
         }
-        
+    
     public:
+    
+        void exportMap() {
+            if(this->_content) this->_content->exportMap();
+        }
+    
+        void resetMap() {
+            if(this->_smudge) this->_smudge->resetMap();
+            if(this->_content) this->_content->resetMap();
+        }
+    
         
         App() {
             
@@ -135,14 +145,9 @@ class App {
                 if(this->_content) this->_content->draw(Type::MAP);
             });
             
-          
-
-            
             if(objc_getClass("DroppableView")==nil) { objc_registerClassPair(objc_allocateClassPair(objc_getClass("NSView"),"DroppableView",0)); }
             Class DroppableView = objc_getClass("DroppableView");
               
-            
-            
             if(DroppableView) {
               
                 if(Config::mode!=Mode::PREVIEW) {
@@ -243,6 +248,10 @@ class App {
                                         this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
                                         this->_content->draw(this->_type);
                                         this->_content->transform();
+                                        
+                                        
+                                        [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
+
                                     }
                                 }
                             }
@@ -386,15 +395,55 @@ class App {
 #pragma mark AppDelegate
 @interface AppDelegate:NSObject <NSApplicationDelegate> {
     App *app;
+    NSMenuItem *resetMapMenuItem;
+    NSMenuItem *exportMapMenuItem;
+    NSMenuItem *quitMenuItem;
 }
 @end
 @implementation AppDelegate
 -(void)applicationDidFinishLaunching:(NSNotification*)aNotification {
     app = new App();
+    
+    id menu = [[NSMenu alloc] init];
+    id rootMenuItem = [[NSMenuItem alloc] init];
+    [menu addItem:rootMenuItem];
+    id appMenu = [[NSMenu alloc] init];
+    
+    resetMapMenuItem = [[NSMenuItem alloc] initWithTitle:@"Reset Map" action:nil keyEquivalent:@"r"];
+    exportMapMenuItem = [[NSMenuItem alloc] initWithTitle:@"Export Map" action:nil keyEquivalent:@"e"];
+
+    quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
+    [appMenu addItem:resetMapMenuItem];
+    [appMenu addItem:exportMapMenuItem];
+    [appMenu addItem:[NSMenuItem separatorItem]];
+    [appMenu addItem:quitMenuItem];
+
+    
+    [rootMenuItem setSubmenu:appMenu];
+    [NSApp setMainMenu:menu];
+    
+    [[NSNotificationCenter defaultCenter]
+        addObserverForName:@"onload"
+        object:nil
+        queue:[NSOperationQueue mainQueue]
+        usingBlock:^(NSNotification *){
+            [self->resetMapMenuItem setAction:@selector(resetMap:)];
+            [self->exportMapMenuItem setAction:@selector(exportMap:)];
+        }
+    ];
 }
 -(void)applicationWillTerminate:(NSNotification *)aNotification {
     delete app;
 }
+
+-(void)resetMap:(id)sender {
+    if(app) app->resetMap();
+}
+
+-(void)exportMap:(id)sender {
+    if(app) app->exportMap();
+}
+
 @end
 
 int main(int argc, char *argv[]) {
@@ -404,15 +453,6 @@ int main(int argc, char *argv[]) {
         id app = [NSApplication sharedApplication];
         id delegat = [AppDelegate alloc];
         [app setDelegate:delegat];
-
-        id menu = [[NSMenu alloc] init];
-        id rootMenuItem = [[NSMenuItem alloc] init];
-        [menu addItem:rootMenuItem];
-        id appMenu = [[NSMenu alloc] init];
-        id quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
-        [appMenu addItem:quitMenuItem];
-        [rootMenuItem setSubmenu:appMenu];
-        [NSApp setMainMenu:menu];
         [app run];
     }
 }

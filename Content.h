@@ -1,3 +1,5 @@
+#import <vector>
+#import "fpng.h"
 #import "ContentLayer.h"
 
 class Content {
@@ -9,6 +11,11 @@ class Content {
         unsigned int *RGB = nullptr;
         unsigned int *MAP = nullptr;
         
+        unsigned int *RESET = nullptr;
+    
+        std::vector<unsigned char> fpng_file_buf;
+
+
         int _width = 0;
         int _height = 0;
         
@@ -157,7 +164,14 @@ class Content {
         void set(NSData *rgb, NSData *map) {
             
             this->jpeg(this->RGB,rgb,this->_width,this->_height);
-            this->png(this->MAP,map,this->_width,this->_height);
+            this->png(this->RESET,map,this->_width,this->_height);
+            
+            this->resetMap();
+            
+        }
+        
+        void resetMap() {
+            for(int k=0; k<this->_width*this->_height; k++) this->MAP[k] = this->RESET[k];
             
             this->_layer->RGB(this->RGB);
             this->_layer->MAP(this->MAP);
@@ -168,8 +182,29 @@ class Content {
                     this->transform();
                 });
             });
+            
         }
-        
+    
+        void exportMap() {
+            if(fpng::fpng_encode_image_to_memory((const char *)this->MAP,this->_width,this->_height,4,this->fpng_file_buf)) {
+                
+                long unixtime = (CFAbsoluteTimeGetCurrent()+kCFAbsoluteTimeIntervalSince1970)*1000;
+                NSString *timeStampString = [NSString stringWithFormat:@"%f",(unixtime/1000.0)];
+                NSDate *date = [NSDate dateWithTimeIntervalSince1970:[timeStampString doubleValue]];
+                NSDateFormatter *format = [[NSDateFormatter alloc] init];
+                [format setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"]];
+                [format setDateFormat:@"yyyy_MM_dd_HH_mm_ss_SSS"];
+
+                NSString *path = [NSString stringWithFormat:@"%@/%@.png",[NSSearchPathForDirectoriesInDomains(NSMoviesDirectory,NSUserDomainMask,YES) objectAtIndex:0],[format stringFromDate:date]];
+                
+                //NSLog(@"%@",path);
+                
+                NSData *png = [NSData dataWithBytes:this->fpng_file_buf.data() length:this->fpng_file_buf.size()];
+                [png writeToFile:path options:NSDataWritingAtomic error:nil];
+                
+            }
+        }
+    
         Content(int w, int h) {
             
             this->_width = w;
@@ -180,6 +215,9 @@ class Content {
             
             if(this->MAP) delete this->MAP;
             this->MAP = new unsigned int[w*h];
+            
+            if(this->RESET) delete this->RESET;
+            this->RESET = new unsigned int[w*h];
             
             if(this->buffer[0]) delete this->buffer[0];
 
