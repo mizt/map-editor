@@ -90,6 +90,10 @@ class Content {
     
     public:
     
+        unsigned int *map() {
+            return this->MAP;
+        }
+    
         int width() {
             return this->_width;
         }
@@ -160,13 +164,15 @@ class Content {
             }
         }
     
+        void set(NSData *map) {
+            this->png(this->RESET,map,this->_width,this->_height);
+            this->resetMap();
+        }
+    
         void set(NSData *rgb, NSData *map) {
-            
             this->jpeg(this->RGB,rgb,this->_width,this->_height);
             this->png(this->RESET,map,this->_width,this->_height);
-            
             this->resetMap();
-            
         }
         
         void resetMap() {

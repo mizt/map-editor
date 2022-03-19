@@ -226,8 +226,10 @@ class App {
                 },"@@:@");
                 
                 Utils::addMethod(DroppableView,@"concludeDragOperation:",^(id me,id<NSDraggingInfo> sender) {
+                    
+                    this->_isDrop = false;
+                    
                     if(this->_content==nil) {
-                        this->_isDrop = false;
                         NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
                         if([path.pathExtension isEqualToString:@"mov"]) {
                             MultiTrackQTMovie::Parser *parser = new MultiTrackQTMovie::Parser(path);
@@ -256,12 +258,21 @@ class App {
                                 }
                             }
                         }
-                        else {
-                            dispatch_async(dispatch_get_main_queue(),^{
-                                this->_isDrop = true;
-                            });
+                    }
+                    else {
+                        if(this->_content) {
+                            NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
+                            if([path.pathExtension isEqualToString:@"png"]) {
+                                NSData *png = [[NSData alloc] initWithContentsOfFile:path];
+                                this->_content->set(png);
+                                if(this->_smudge) this->_smudge->setMap(this->_content->map());
+                            }
                         }
                     }
+                    
+                    dispatch_async(dispatch_get_main_queue(),^{
+                        this->_isDrop = true;
+                    });
                     
                 },"@@:@");
                 

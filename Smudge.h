@@ -2,6 +2,15 @@ class Smudge : public MapRG16UnormBase {
     
     public:
     
+        void setMap(unsigned int *map) {
+            for(int i=0; i<this->height; i++) {
+                for(int j=0; j<this->width; j++) {
+                    this->_map[0][i*this->width+j] = map[i*this->width+j];
+                    this->_map[1][i*this->width+j] = map[i*this->width+j];
+                }
+            }
+        }
+    
         void resetMap() {
             for(int i=0; i<this->height; i++) {
                 for(int j=0; j<this->width; j++) {
