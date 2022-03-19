@@ -137,7 +137,6 @@ class Content {
             this->_layer->MAP(this->MAP);
         }
     
-    
         void copy(Utils::Bounds *selected, int ox, int oy) {
             int top = selected->top;
             int left = selected->left;
@@ -195,7 +194,10 @@ class Content {
                 [format setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"]];
                 [format setDateFormat:@"yyyy_MM_dd_HH_mm_ss_SSS"];
 
-                NSString *path = [NSString stringWithFormat:@"%@/%@.png",[NSSearchPathForDirectoriesInDomains(NSMoviesDirectory,NSUserDomainMask,YES) objectAtIndex:0],[format stringFromDate:date]];
+                NSDictionary* environ = [[NSProcessInfo processInfo] environment];
+                BOOL inSandbox = (nil != [environ objectForKey:@"APP_SANDBOX_CONTAINER_ID"]);
+                
+                NSString *path = [NSString stringWithFormat:@"%@/%@.png",[NSSearchPathForDirectoriesInDomains((inSandbox)?NSMoviesDirectory:NSDesktopDirectory,NSUserDomainMask,YES) objectAtIndex:0],[format stringFromDate:date]];
                 
                 //NSLog(@"%@",path);
                 
@@ -232,7 +234,6 @@ class Content {
             if(this->_layer->init(this->_width,this->_height,@"content.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
                 
                 this->_layer->resolution(this->_width,this->_height);
-                
                 
                 this->_view.layer = this->_layer->layer();
              
