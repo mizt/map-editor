@@ -135,26 +135,38 @@ class App {
                 if(this->_content) this->_content->draw(Type::MAP);
             });
             
+          
+
+            
             if(objc_getClass("DroppableView")==nil) { objc_registerClassPair(objc_allocateClassPair(objc_getClass("NSView"),"DroppableView",0)); }
             Class DroppableView = objc_getClass("DroppableView");
               
+            
+            
             if(DroppableView) {
-                if(this->_content&&Config::mode!=Mode::PREVIEW) {
+              
+                if(Config::mode!=Mode::PREVIEW) {
+                    
                     Utils::addMethod(DroppableView,@"mouseDown:",^(id me,NSEvent *theEvent) {
                         
-                        this->_mouse = [NSEvent mouseLocation];
-                        this->_point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                        this->_isDrag = true;
+                        if(this->_content) {
                         
-                        if(Config::mode==Mode::COPY_AND_PASTE) {
+                            this->_mouse = [NSEvent mouseLocation];
+                            this->_point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
+                            this->_isDrag = true;
+                            
+                            if(Config::mode==Mode::COPY_AND_PASTE) {
+                                
+                            }
+                            else if(Config::mode==Mode::SMUDGE) {
+                                float x = 0;
+                                float y = 0;
+                                this->mouse(&x,&y);
+                                this->_smudge->reset(x,y);
+                            }
                             
                         }
-                        else if(Config::mode==Mode::SMUDGE) {
-                            float x = 0;
-                            float y = 0;
-                            this->mouse(&x,&y);
-                            this->_smudge->reset(x,y);
-                        }
+                            
                     },"@@:@");
                 }
                 
