@@ -72,9 +72,9 @@ class MetalBaseLayer {
         bool updateShader() {
             
             id<MTLFunction> vertexFunction = [this->_library newFunctionWithName:@"vertexShader"];
-            if(!vertexFunction) return nil;
+            if(!vertexFunction) return false;
             id<MTLFunction> fragmentFunction = [this->_library newFunctionWithName:@"fragmentShader"];
-            if(!fragmentFunction) return nil;
+            if(!fragmentFunction) return false;
             
             if(this->_useArgumentEncoder) this->_argumentEncoder = [fragmentFunction newArgumentEncoderWithBufferIndex:0];
             
