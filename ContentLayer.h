@@ -62,6 +62,7 @@ class ContentLayer : public MetalBaseLayer<T> {
                 depthDescriptor.depthCompareFunction = MTLCompareFunctionLess;
                 depthDescriptor.depthWriteEnabled = YES;
                 this->_depthState = [this->_device newDepthStencilStateWithDescriptor:depthDescriptor];
+                if(!this->_depthState) return false;
             }
                         
             if(MetalBaseLayer<T>::setup()==false) return false;
