@@ -11,7 +11,7 @@ class MetalBaseLayer {
     protected:
     
         bool DEPTH_TEST = false;
-                
+
         T *_data = nullptr;
         
         NSString *_name;
@@ -103,7 +103,7 @@ class MetalBaseLayer {
             return false;
         }
         
-        virtual bool setupShader() {
+        bool setupShader() {
             
             this->_renderPipelineDescriptor = [MTLRenderPipelineDescriptor new];
             this->_renderPipelineDescriptor.depthAttachmentPixelFormat = (this->DEPTH_TEST)?MTLPixelFormatDepth32Float_Stencil8:MTLPixelFormatInvalid;

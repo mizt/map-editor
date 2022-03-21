@@ -2,6 +2,11 @@ typedef short MESH_INDICES_TYPE;
 
 class Mesh {
     
+    private:
+        
+        unsigned int w = 0;
+        unsigned int h = 0;
+    
     public:
         
         int TEXCOORD_SIZE = 0;
@@ -14,19 +19,22 @@ class Mesh {
         int INDICES_SIZE = 0;
         MESH_INDICES_TYPE *indices = nullptr;
     
-        unsigned int w = 0;
-        unsigned int h = 0;
-        
+        int width() {
+            return this->w;
+        }
+    
+        int height() {
+            return this->h;
+        }
+            
         Mesh(unsigned int x=16, unsigned int y=9) {
          
-            if(x<16) x = 16;
-            if(y<9) y = 9;
+            if(x<2) x = 2;
+            if(y<2) y = 2;
             
             this->w = x;
             this->h = y;
-            
-            NSLog(@"Mesh %d,%d",this->w,this->h);
-                        
+                                    
             this->VERTICES_SIZE = (x*y)<<2;
             this->vertices = new float[this->VERTICES_SIZE];
              for(int i=0; i<y; i++) {

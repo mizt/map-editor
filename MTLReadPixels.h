@@ -47,7 +47,7 @@ class MTLReadPixels : public MTLReadPixelsBasse<T> {
     public:
         
         MTLReadPixels(int w, int h, int bpp=4, NSString *dir=nil, NSString *identifier=nil) : MTLReadPixelsBasse<T>(w,h,bpp) {
-            
+                        
             NSString *metallib = FileManager::path(FileManager::addPlatform(FileManager::concat(dir,@"copy.metallib")),identifier);
             
             
@@ -105,12 +105,9 @@ class MTLReadPixels : public MTLReadPixelsBasse<T> {
                                     clipContents[0] = this->width();
                                     clipContents[1] = this->height();
                                     
-
-
                                     id<MTLFunction> function = [library newFunctionWithName:@"copy"];
                                     this->_pipelineState = [this->_device newComputePipelineStateWithFunction:function error:nil];
                                     if(!err) {
-                                        
 
                                         this->_isInit = true;
                                     }

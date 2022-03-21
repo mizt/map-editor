@@ -214,23 +214,31 @@ class App : public Droppable {
                                         int frame = 0;
                                         this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
                                         
-                                        this->_meshLayer = new MeshLayer<Mesh>();
-                                        if(this->_meshLayer->init(w,h,@"nearest.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
-                                            NSLog(@"Mesh");
-                                            this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
-                                                
-                                                this->_content->copy(this->_meshLayer->getByte());
-                                                this->_meshLayer->cleanup();
-                                              
-                                                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/30.0),dispatch_get_main_queue(),^{
+                                        if(Config::mode==Mode::MESH) {
+                                            this->_meshLayer = new MeshLayer<Mesh>();
+                                            if(this->_meshLayer->init(w,h,@"mesh.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
+                                                NSLog(@"Mesh");
+                                                this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
                                                     
-                                                    this->_content->draw(this->_type);
-                                                    this->_content->transform();
+                                                    this->_content->copy(this->_meshLayer->getByte());
+                                                    this->_meshLayer->cleanup();
+                                                  
+                                                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/30.0),dispatch_get_main_queue(),^{
+                                                        
+                                                        this->_content->draw(this->_type);
+                                                        this->_content->transform();
+                                                        
+                                                        [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
                                                     
-                                                    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
-                                                
+                                                    });
                                                 });
-                                            });
+                                            }
+                                        }
+                                        else {
+                                            this->_content->draw(this->_type);
+                                            this->_content->transform();
+                                            
+                                            [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
                                         }
                                     }
                                 }
@@ -293,7 +301,16 @@ class App : public Droppable {
                             }
                             else if(Config::mode==Mode::MESH) {
                                 if([NSEvent pressedMouseButtons]==1) {
-                                                     
+                                    
+                                    this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
+                                        
+                                        this->_content->copy(this->_meshLayer->getByte());
+                                        this->_meshLayer->cleanup();
+                                        
+                                        this->_content->draw(this->_type);
+                                        this->_content->transform();
+                                        
+                                    });
                                     
                                 }
                                 else {

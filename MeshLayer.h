@@ -4,7 +4,7 @@ class MeshLayer : public MetalBaseLayer<T> {
     private:
     
         unsigned int *MAP = nullptr;
-        MTLReadPixels<unsigned int> *ReadPixels = nullptr;
+        MTLReadPixels<unsigned short> *ReadPixels = nullptr;
     
         id<MTLTexture> _texture;
         id<MTLBuffer> _texcoordBuffer;
@@ -17,14 +17,13 @@ class MeshLayer : public MetalBaseLayer<T> {
     
         bool setup() {
             
-            MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatBGRA8Unorm,this->_width,this->_height);
+            
+            MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatRG16Unorm,this->_width,this->_height);
             if(!textureDescriptor) return false;
             
             this->_texture = [this->_device newTextureWithDescriptor:textureDescriptor];
             if(!this->_texture) return false;
-            
-            [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:this->MAP bytesPerRow:this->_width<<2];
-            
+                        
             if(this->DEPTH_TEST) {
                 MTLTextureDescriptor *depthTextureDescriptor = MTLUtils::descriptor(MTLPixelFormatDepth32Float_Stencil8,this->_width,this->_height);
                 if(!depthTextureDescriptor) return false;
@@ -51,6 +50,32 @@ class MeshLayer : public MetalBaseLayer<T> {
         }
     
         id<MTLCommandBuffer> setupCommandBuffer() {
+            
+            // randomize
+            
+            [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:this->MAP bytesPerRow:this->_width<<2];
+            NSLog(@"%08x",this->MAP[1]);
+
+            
+            Mesh *mesh = this->_data;
+            
+            int w = mesh->width();
+            int h = mesh->height();
+            
+            NSLog(@"%d,%d",w,h);
+            
+            float *vertices = (float *)[this->_verticesBuffer contents];
+            
+            for(int i=1; i<h-1; i++) {
+                for(int j=1; j<w-1; j++) {
+                    
+                    int addr = (i*w+j)<<2;
+
+                    vertices[addr+0] = (j/((float)(w-1)))*2.0-1.0 + (((random()%200)*0.01)-1.0)/(float)(w-1);
+                    vertices[addr+1] = (i/((float)(h-1)))*2.0-1.0 + (((random()%200)*0.01)-1.0)/(float)(h-1);
+                    
+                }
+            }
             
             id<MTLCommandBuffer> commandBuffer = [this->_commandQueue commandBuffer];
             
@@ -94,17 +119,17 @@ class MeshLayer : public MetalBaseLayer<T> {
                 this->MAP = new unsigned int[width*height];
                 for(int i=0; i<height; i++) {
                     for(int j=0; j<width; j++) {
-                        this->MAP[i*width+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
+                        this->MAP[i*width+j] = (0x7FFF+((int)(j*4.0)))<<16|(0x7FFF+((int)(i*4.0)));
                     }
                 }
             }
             
             if(!this->ReadPixels) {
-               this->ReadPixels = new MTLReadPixels<unsigned int>(width,height);
+               this->ReadPixels = new MTLReadPixels<unsigned short>(width,height,2);
             }
             
             if(!this->_data) {
-                this->_data = new T(width>>3,height>>3);
+                this->_data = new T(8,8);
             }
                     
             return MetalBaseLayer<T>::init(width,height,shader,identifier,blendingEnabled);
@@ -112,7 +137,10 @@ class MeshLayer : public MetalBaseLayer<T> {
         }
     
         unsigned int *getByte() {
-            return (unsigned int *)this->ReadPixels->getBytes(this->drawableTexture(),true);
+            
+            unsigned int *bytes = (unsigned int *)this->ReadPixels->getBytes(this->drawableTexture(),true);
+
+            return bytes;
         }
        
         MeshLayer() : MetalBaseLayer<T>() {
