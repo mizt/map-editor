@@ -54,15 +54,13 @@ class MeshLayer : public MetalBaseLayer<T> {
             // randomize
             
             [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:this->MAP bytesPerRow:this->_width<<2];
-            NSLog(@"%08x",this->MAP[1]);
-
             
             Mesh *mesh = this->_data;
             
             int w = mesh->width();
             int h = mesh->height();
             
-            NSLog(@"%d,%d",w,h);
+            //NSLog(@"%d,%d",w,h);
             
             float *vertices = (float *)[this->_verticesBuffer contents];
             
