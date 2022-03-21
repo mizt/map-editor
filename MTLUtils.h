@@ -7,14 +7,21 @@ namespace MTLUtils {
     id<MTLBuffer> newBuffer(id<MTLDevice> device, long length, MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault) {
         return [device newBufferWithLength:length options:options];
     }
+
+    id<MTLBuffer> setU32(id<MTLBuffer> buffer, unsigned int x) {
+        unsigned int *tmp = (unsigned int *)[buffer contents];
+        tmp[0] = x;
+        return buffer;
+    }
+
     
-    id<MTLBuffer> setFloat(id<MTLBuffer> buffer,float x) {
+    id<MTLBuffer> setFloat(id<MTLBuffer> buffer, float x) {
         float *tmp = (float *)[buffer contents];
         tmp[0] = x;
         return buffer;
     }
     
-    id<MTLBuffer> setFloat2(id<MTLBuffer> buffer,float x,float y) {
+    id<MTLBuffer> setFloat(id<MTLBuffer> buffer, float x, float y) {
         float *tmp = (float *)[buffer contents];
         tmp[0] = x;
         tmp[1] = y;

@@ -22,12 +22,11 @@ class ContentLayer : public MetalBaseLayer<T> {
         }
     
         void type(unsigned int n) {
-            ((unsigned int *)[this->_type contents])[0] = n;
+            MTLUtils::setU32(this->_type,n);
         }
     
         void resolution(float x, float y) {
-            ((float *)[this->_resolution contents])[0] = x;
-            ((float *)[this->_resolution contents])[1] = y;
+            MTLUtils::setFloat(this->_resolution,x,y);
         }
     
         T *data() {
