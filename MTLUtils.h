@@ -1,7 +1,7 @@
 namespace MTLUtils {
 
-    MTLTextureDescriptor *descriptor(MTLPixelFormat format, int w, int h) {
-        return [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format width:w height:h mipmapped:NO];
+    MTLTextureDescriptor *descriptor(MTLPixelFormat format, int w, int h, BOOL mipmapped=NO) {
+        return [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format width:w height:h mipmapped:mipmapped];
     }
 
     id<MTLBuffer> newBuffer(id<MTLDevice> device, long length, MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault) {

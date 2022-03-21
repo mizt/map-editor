@@ -36,7 +36,7 @@ class ContentLayer : public MetalBaseLayer<T> {
     
         bool setup() {
             
-            MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:this->_width height:this->_height mipmapped:NO];
+            MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatRGBA8Unorm,this->_width,this->_height); 
             if(!textureDescriptor) return false;
             
             this->_texture = [this->_device newTextureWithDescriptor:textureDescriptor];
@@ -54,12 +54,10 @@ class ContentLayer : public MetalBaseLayer<T> {
             this->type(0);
             
             if(this->DEPTH_TEST) {
-                MTLTextureDescriptor *depthTextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float_Stencil8 width:this->_width height:this->_height mipmapped:NO];
+                MTLTextureDescriptor *depthTextureDescriptor = MTLUtils::descriptor(MTLPixelFormatDepth32Float_Stencil8,this->_width,this->_height);
                 if(!depthTextureDescriptor) return false;
-
                 this->_depthTexture = [this->_device newTextureWithDescriptor:depthTextureDescriptor];
                 if(!this->_depthTexture) return false;
-
                 MTLDepthStencilDescriptor *depthDescriptor = [MTLDepthStencilDescriptor new];
                 depthDescriptor.depthCompareFunction = MTLCompareFunctionLess;
                 depthDescriptor.depthWriteEnabled = YES;

@@ -46,7 +46,7 @@ class MTLReadPixels : public MTLReadPixelsBasse<T> {
 
     public:
         
-        MTLReadPixels(int w,int h, int bpp=4, NSString *dir=nil, NSString *identifier=nil) : MTLReadPixelsBasse<T>(w,h,bpp) {
+        MTLReadPixels(int w, int h, int bpp=4, NSString *dir=nil, NSString *identifier=nil) : MTLReadPixelsBasse<T>(w,h,bpp) {
             
             NSString *metallib = FileManager::path(FileManager::addPlatform(FileManager::concat(dir,@"copy.metallib")),identifier);
             

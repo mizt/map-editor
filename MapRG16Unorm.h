@@ -69,7 +69,6 @@ class MapRG16UnormBase {
             this->height = h;
         
             this->_map[0] = new unsigned int[w*h];
-            
             for(int i=0; i<h; i++) {
                 for(int j=0; j<w; j++) {
                     this->_map[0][i*w+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
@@ -95,11 +94,9 @@ class MapRG16UnormBase {
 
             this->function = [this->_library newFunctionWithName:@"processimage"];
             this->pipelineState = [this->device newComputePipelineStateWithFunction:this->function error:nil];
-            
         }
     
         ~MapRG16UnormBase() {
-            
             delete[] this->_map[0];
             delete[] this->_map[1];
         }

@@ -15,7 +15,6 @@ class Content {
     
         std::vector<unsigned char> fpng_file_buf;
 
-
         int _width = 0;
         int _height = 0;
         

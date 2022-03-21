@@ -4,6 +4,8 @@
 #import <WebKit/WebKit.h>
 #import <objc/runtime.h>
 
+#import "MTLUtils.h"
+
 #import "Types.h"
 
 #import "turbojpeg.h"
