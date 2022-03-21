@@ -133,7 +133,14 @@ class Content {
                 this->_layer->cleanup();
             });
         }
-
+    
+        void src(unsigned int *p) {
+            for(int k=0; k<this->_width*this->_height; k++) {
+                this->RGB[k] = p[k];
+            }
+            this->_layer->RGB(this->RGB);
+        }
+    
         void copy(unsigned int *map) {
             for(int k=0; k<this->_width*this->_height; k++) {
                 this->MAP[k] = map[k];
@@ -204,9 +211,7 @@ class Content {
                 BOOL inSandbox = (nil != [environ objectForKey:@"APP_SANDBOX_CONTAINER_ID"]);
                 
                 NSString *path = [NSString stringWithFormat:@"%@/%@.png",[NSSearchPathForDirectoriesInDomains((inSandbox)?NSMoviesDirectory:NSDesktopDirectory,NSUserDomainMask,YES) objectAtIndex:0],[format stringFromDate:date]];
-                
-                //NSLog(@"%@",path);
-                
+                                
                 NSData *png = [NSData dataWithBytes:this->fpng_file_buf.data() length:this->fpng_file_buf.size()];
                 [png writeToFile:path options:NSDataWritingAtomic error:nil];
                 

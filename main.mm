@@ -15,6 +15,7 @@
 #import "UI.h"
 
 #import "Plane.h"
+#import "Mesh.h"
 #import "MetalBaseLayer.h"
 
 #import "Guide.h"
