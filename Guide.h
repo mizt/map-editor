@@ -71,7 +71,7 @@ class Guide {
             this->_view.layer.backgroundColor = [NSColor clearColor].CGColor;
             
             this->_layer = new GuideLayer<Plane>();
-            if(this->_layer->init(STAGE_WIDTH,STAGE_HEIGHT,@"guide.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
+            if(this->_layer->init(STAGE_WIDTH,STAGE_HEIGHT,@"nearest.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
                 this->_view.layer = this->_layer->layer();
             }
         }

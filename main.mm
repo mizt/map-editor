@@ -19,6 +19,7 @@
 #import "Plane.h"
 #import "Mesh.h"
 #import "MetalBaseLayer.h"
+#import "MeshLayer.h"
 
 #import "Guide.h"
 #import "Content.h"
@@ -37,11 +38,12 @@
 enum Mode {
     PREVIEW = 0,
     COPY_AND_PASTE = 1,
-    SMUDGE = 2
+    SMUDGE = 2,
+    MESH = 3
 };
 
 namespace Config {
-    unsigned int mode = Mode::SMUDGE;
+    unsigned int mode = Mode::COPY_AND_PASTE;
 };
 
 #import "Droppable.h"
@@ -277,7 +279,17 @@ class App : public Droppable {
                                 }
                                 
                             }
-                            else {
+                            else if(Config::mode==Mode::MESH) {
+                                if([NSEvent pressedMouseButtons]==1) {
+                                                     
+                                    
+                                }
+                                else {
+                                    this->_isDrag = false;
+                                }
+                                
+                            }
+                            else if(Config::mode==Mode::COPY_AND_PASTE) {
                                 
                                 float left = this->_point.x;
                                 float top  = this->_point.y;
@@ -341,6 +353,9 @@ class App : public Droppable {
                                     this->_guide->draw();
                                     
                                 }
+                            }
+                            else {
+                                
                             }
                         }
                     }
