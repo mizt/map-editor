@@ -41,22 +41,20 @@ namespace Config {
     unsigned int mode = Mode::SMUDGE;
 };
 
-class App {
+#import "Droppable.h"
+
+class App : public Droppable {
     
     private:
         
         Win *_win;
         NSView *_view;
         Guide *_guide = nullptr;
-        Content *_content = nullptr;
-        Footer *_footer = new Footer();
-
+        
         Smudge *_smudge = nullptr;
     
         dispatch_source_t _timer;
     
-        bool _isDrop = true;
-        bool _isDrag = false;
         bool _isSelected = false;
 
         NSPoint _point = CGPointMake(0.0,0.0);
@@ -76,7 +74,6 @@ class App {
         Utils::Bounds _clipped;
         
         unsigned int _type = 0;
-        float _wheel = 0.5;
     
         float LEFT() {
             return this->_content->tx()+this->_content->width()*(1.0-this->_content->scale())*0.5;
@@ -145,7 +142,6 @@ class App {
                 if(this->_content) this->_content->draw(Type::MAP);
             });
             
-            if(objc_getClass("DroppableView")==nil) { objc_registerClassPair(objc_allocateClassPair(objc_getClass("NSView"),"DroppableView",0)); }
             Class DroppableView = objc_getClass("DroppableView");
               
             if(DroppableView) {
@@ -173,57 +169,22 @@ class App {
                         }
                             
                     },"@@:@");
-                }
-                
-                Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
-                    if(this->_isDrag==false&&this->_content) {
-                        if(theEvent.buttonNumber==2) {
-                            this->_content->translate(
-                            this->_content->tx()+theEvent.deltaX,
-                            this->_content->ty()-theEvent.deltaY);
-                            this->_content->transform();
-                        }
+                    
+                    if(Config::mode==Mode::COPY_AND_PASTE) {
+                        Utils::addMethod(DroppableView,@"rightMouseDown:",^(id me,NSEvent *theEvent) {
+                            if(this->_isSelected) {
+                                float zoom = 1.0/this->_content->scale();
+                                float left = this->LEFT();
+                                float top = (STAGE_HEIGHT-this->TOP());
+                                float px = (theEvent.locationInWindow.x);
+                                float py = ((STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
+                                this->_content->copy(&this->_selected,(px-left)*zoom,(py-top)*zoom);
+                                this->_content->draw(this->_type);
+                            }
+                        },"@@:@");
                     }
-                },"@@:@");
-                
-                if(Config::mode==Mode::COPY_AND_PASTE) {
-                    Utils::addMethod(DroppableView,@"rightMouseDown:",^(id me,NSEvent *theEvent) {
-                        if(this->_isSelected) {
-                            float zoom = 1.0/this->_content->scale();
-                            float left = this->LEFT();
-                            float top = (STAGE_HEIGHT-this->TOP());
-                            float px = (theEvent.locationInWindow.x);
-                            float py = ((STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
-                            this->_content->copy(&this->_selected,(px-left)*zoom,(py-top)*zoom);
-                            this->_content->draw(this->_type);
-                        }
-                    },"@@:@");
+                    
                 }
-                
-                Utils::addMethod(DroppableView,@"scrollWheel:",^(id me,NSEvent *theEvent) {
-                    if(this->_isDrag==false&&this->_content) {
-                        float divsion = 4.0;
-                        this->_wheel+=(theEvent.deltaY/100.0)*8.0;
-                        this->_wheel = (this->_wheel<=0.0)?0.0:(this->_wheel>=1.0)?1.0:this->_wheel;
-                        if(this->_wheel>0.5) {
-                            this->_content->scale(((int)((1.0+(this->_wheel-0.5)*2.0)*divsion))*(1.0/divsion));
-                        }
-                        else {
-                            this->_content->scale(((int)((0.25+(0.75*2.0)*this->_wheel)*divsion))*(1.0/divsion));
-                        }
-                        this->_content->transform();
-                        this->_footer->scale((int)(this->_content->scale()*100.0));
-                    }
-                },"@@:@");
-                
-                Utils::addMethod(DroppableView,@"draggingEntered:",^NSDragOperation(id me,id<NSDraggingInfo> sender) {
-                    if(!this->_isDrop) return NSDragOperationNone;
-                    return NSDragOperationLink;
-                },"@@:@");
-
-                Utils::addMethod(DroppableView,@"performDragOperation:",^BOOL(id me,id<NSDraggingInfo> sender) {
-                    return this->_isDrop?YES:NO;
-                },"@@:@");
                 
                 Utils::addMethod(DroppableView,@"concludeDragOperation:",^(id me,id<NSDraggingInfo> sender) {
                     
