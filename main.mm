@@ -4,9 +4,8 @@
 #import <WebKit/WebKit.h>
 #import <objc/runtime.h>
 
-#import "MTLUtils.h"
-
 #import "Types.h"
+#import "FileManager.h"
 
 #import "turbojpeg.h"
 #import "spng.h"
@@ -16,6 +15,9 @@
 #import "Utils.h"
 #import "UI.h"
 
+#import "MTLUtils.h"
+#import "MTLReadPixels.h"
+
 #import "Plane.h"
 #import "Mesh.h"
 #import "MetalBaseLayer.h"
@@ -24,8 +26,6 @@
 #import "Guide.h"
 #import "Content.h"
 
-#import "MTLUtils.h"
-#import "MTLReadPixels.h"
 #import "ComputeShaderBase.h"
 
 #import "MapRG16Unorm.h"
@@ -43,7 +43,7 @@ enum Mode {
 };
 
 namespace Config {
-    unsigned int mode = Mode::COPY_AND_PASTE;
+    unsigned int mode = Mode::MESH;
 };
 
 #import "Droppable.h"
@@ -57,6 +57,8 @@ class App : public Droppable {
         Guide *_guide = nullptr;
         
         Smudge *_smudge = nullptr;
+    
+        MeshLayer<Mesh> *_meshLayer = nullptr;
     
         dispatch_source_t _timer;
     
@@ -161,10 +163,7 @@ class App : public Droppable {
                             this->_point = CGPointMake(theEvent.locationInWindow.x,(STAGE_HEIGHT-1)-theEvent.locationInWindow.y);
                             this->_isDrag = true;
                             
-                            if(Config::mode==Mode::COPY_AND_PASTE) {
-                                
-                            }
-                            else if(Config::mode==Mode::SMUDGE) {
+                            if(Config::mode==Mode::SMUDGE) {
                                 float x = 0;
                                 float y = 0;
                                 this->mouse(&x,&y);
@@ -214,9 +213,22 @@ class App : public Droppable {
                                         [this->_view addSubview:this->_content->view()];
                                         int frame = 0;
                                         this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
-                                        this->_content->draw(this->_type);
-                                        this->_content->transform();
+                                       
                                         
+                                        this->_meshLayer = new MeshLayer<Mesh>();
+                                        if(this->_meshLayer->init(w,h,@"nearest.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
+                                            NSLog(@"Mesh");
+                                            this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
+                                                
+                                                this->_content->copy(this->_meshLayer->getByte());
+                                                this->_meshLayer->cleanup();
+                                                this->_content->draw(this->_type);
+                                                this->_content->transform();
+                                            });
+                                            
+                                        }
+                                        
+                                       
                                         
                                         [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
 

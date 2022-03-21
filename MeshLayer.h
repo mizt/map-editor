@@ -2,43 +2,28 @@ template <typename T>
 class MeshLayer : public MetalBaseLayer<T> {
     
     private:
-        
-        id<MTLTexture> _texture;
-        id<MTLTexture> _map;
     
-        id<MTLBuffer> _type;
-        id<MTLBuffer> _resolution;
-
+        unsigned int *MAP = nullptr;
+        MTLReadPixels<unsigned int> *ReadPixels = nullptr;
+    
+        id<MTLTexture> _texture;
         id<MTLBuffer> _texcoordBuffer;
 
     public:
         
-        void texture(unsigned int *p) {
-            [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:p bytesPerRow:this->_width<<2];
-        }
-    
         T *data() {
             return this->_data;
         }
     
         bool setup() {
             
-            MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatRGBA8Unorm,this->_width,this->_height);
+            MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatBGRA8Unorm,this->_width,this->_height);
             if(!textureDescriptor) return false;
             
             this->_texture = [this->_device newTextureWithDescriptor:textureDescriptor];
             if(!this->_texture) return false;
             
-            this->_map = [this->_device newTextureWithDescriptor:textureDescriptor];
-            if(!this->_map) return false;
-
-            this->_type = [this->_device newBufferWithLength:sizeof(unsigned int) options:MTLResourceOptionCPUCacheModeDefault];
-            if(!this->_type) return false;
-            
-            this->_resolution = [this->_device newBufferWithLength:sizeof(float)*2 options:MTLResourceOptionCPUCacheModeDefault];
-            if(!this->_resolution) return false;
-            
-            this->type(0);
+            [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:this->MAP bytesPerRow:this->_width<<2];
             
             if(this->DEPTH_TEST) {
                 MTLTextureDescriptor *depthTextureDescriptor = MTLUtils::descriptor(MTLPixelFormatDepth32Float_Stencil8,this->_width,this->_height);
@@ -105,14 +90,31 @@ class MeshLayer : public MetalBaseLayer<T> {
     
         bool init(int width, int height, NSString *shader=@"default.metallib", NSString *identifier=nil, bool blendingEnabled=false) {
             
-            this->_data = new T(width>>3,height>>3);
-        
+            if(!this->MAP) {
+                this->MAP = new unsigned int[width*height];
+                for(int i=0; i<height; i++) {
+                    for(int j=0; j<width; j++) {
+                        this->MAP[i*width+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
+                    }
+                }
+            }
+            
+            if(!this->ReadPixels) {
+               this->ReadPixels = new MTLReadPixels<unsigned int>(width,height);
+            }
+            
+            if(!this->_data) {
+                this->_data = new T(width>>3,height>>3);
+            }
+                    
             return MetalBaseLayer<T>::init(width,height,shader,identifier,blendingEnabled);
 
-            
         }
     
-        
+        unsigned int *getByte() {
+            return (unsigned int *)this->ReadPixels->getBytes(this->drawableTexture(),true);
+        }
+       
         MeshLayer() : MetalBaseLayer<T>() {
             this->_useArgumentEncoder = true;
         }
