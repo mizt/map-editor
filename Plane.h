@@ -1,4 +1,4 @@
-typedef short MESH_INDICES_TYPE;
+typedef short PLANE_INDICES_TYPE;
 
 class Plane {
     
@@ -20,9 +20,9 @@ class Plane {
             -1.f, 1.f, 0.f, 1.f
         };
         
-        constexpr static int INDICES_TYPE = sizeof(MESH_INDICES_TYPE);
+        constexpr static int INDICES_TYPE = sizeof(PLANE_INDICES_TYPE);
         constexpr static int INDICES_SIZE = 3*2;
-        constexpr static MESH_INDICES_TYPE indices[INDICES_SIZE] = {
+        constexpr static PLANE_INDICES_TYPE indices[INDICES_SIZE] = {
             0,1,2,
             0,2,3
         };

@@ -19,6 +19,7 @@ class Droppable {
             Class DroppableView = objc_getClass("DroppableView");
 
             if(DroppableView) {
+                
                 Utils::addMethod(DroppableView,@"otherMouseDragged:",^(id me,NSEvent *theEvent) {
                     if(this->_isDrag==false&&this->_content) {
                         if(theEvent.buttonNumber==2) {

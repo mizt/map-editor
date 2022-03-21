@@ -12,7 +12,7 @@ class MetalBaseLayer {
     
         bool DEPTH_TEST = false;
                 
-        T *_data;
+        T *_data = nullptr;
         
         NSString *_name;
 
@@ -34,9 +34,12 @@ class MetalBaseLayer {
         MTLRenderPipelineDescriptor *_renderPipelineDescriptor = nil;
         
         bool _useArgumentEncoder = false;
-
+        id<MTLBuffer> _argumentEncoderBuffer;
         id<MTLArgumentEncoder> _argumentEncoder;
-            
+
+        id<MTLTexture> _depthTexture;
+        id<MTLDepthStencilState> _depthState;
+    
         bool _isInit = false;
             
         int _width;
@@ -58,8 +61,22 @@ class MetalBaseLayer {
 #endif
         }
         
+    
+        void setupColorAttachment(MTLRenderPassColorAttachmentDescriptor *colorAttachment) {
+            colorAttachment.texture = this->_metalDrawable.texture;
+            colorAttachment.loadAction  = MTLLoadActionClear;
+            colorAttachment.clearColor  = MTLClearColorMake(0.0f,0.0f,0.0f,1.0f);
+            colorAttachment.storeAction = MTLStoreActionStore;
+        }
+    
+        void setupDepthAttachment(MTLRenderPassDepthAttachmentDescriptor *depthAttachment) {
+            depthAttachment.texture = this->_depthTexture;
+            depthAttachment.loadAction  = MTLLoadActionClear;
+            depthAttachment.storeAction = MTLStoreActionDontCare;
+            depthAttachment.clearDepth  = 1.0;
+        }
+    
         virtual void setColorAttachment(MTLRenderPipelineColorAttachmentDescriptor *colorAttachment) {
-                        
             colorAttachment.blendingEnabled = YES;
             colorAttachment.rgbBlendOperation = MTLBlendOperationAdd;
             colorAttachment.alphaBlendOperation = MTLBlendOperationAdd;
@@ -111,7 +128,7 @@ class MetalBaseLayer {
         }
     
         MetalBaseLayer() {
-            this->_data = new T();
+            
         }
 
         ~MetalBaseLayer() {
@@ -168,6 +185,8 @@ class MetalBaseLayer {
         }
         
         virtual bool init(int width, int height, NSString *shader=@"default.metallib", NSString *identifier=nil, bool blendingEnabled=false) {
+            
+            if(!this->_data) this->_data = new T();
             
             this->_width = width;
             this->_height = height;

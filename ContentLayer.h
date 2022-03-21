@@ -11,11 +11,6 @@ class ContentLayer : public MetalBaseLayer<T> {
 
         id<MTLBuffer> _texcoordBuffer;
 
-        id<MTLBuffer> _argumentEncoderBuffer;
-    
-        id<MTLTexture> _depthTexture;
-        id<MTLDepthStencilState> _depthState;
-        
     public:
         
         void RGB(unsigned int *p) {
@@ -90,18 +85,10 @@ class ContentLayer : public MetalBaseLayer<T> {
         id<MTLCommandBuffer> setupCommandBuffer() {
             
             id<MTLCommandBuffer> commandBuffer = [this->_commandQueue commandBuffer];
-            MTLRenderPassColorAttachmentDescriptor *colorAttachment = this->_renderPassDescriptor.colorAttachments[0];
-            colorAttachment.texture = this->_metalDrawable.texture;
-            colorAttachment.loadAction  = MTLLoadActionClear;
-            colorAttachment.clearColor  = MTLClearColorMake(0.0f,0.0f,0.0f,1.0f);
-            colorAttachment.storeAction = MTLStoreActionStore;
             
+            this->setupColorAttachment(this->_renderPassDescriptor.colorAttachments[0]);
             if(this->DEPTH_TEST) {
-                MTLRenderPassDepthAttachmentDescriptor *depthAttachment = this->_renderPassDescriptor.depthAttachment;
-                depthAttachment.texture     = this->_depthTexture;
-                depthAttachment.loadAction  = MTLLoadActionClear;
-                depthAttachment.storeAction = MTLStoreActionDontCare;
-                depthAttachment.clearDepth  = 1.0;
+                this->setupDepthAttachment(this->_renderPassDescriptor.depthAttachment);
             }
             
             id<MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:this->_renderPassDescriptor];
