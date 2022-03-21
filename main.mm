@@ -213,7 +213,6 @@ class App : public Droppable {
                                         [this->_view addSubview:this->_content->view()];
                                         int frame = 0;
                                         this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
-                                       
                                         
                                         this->_meshLayer = new MeshLayer<Mesh>();
                                         if(this->_meshLayer->init(w,h,@"nearest.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
@@ -222,16 +221,17 @@ class App : public Droppable {
                                                 
                                                 this->_content->copy(this->_meshLayer->getByte());
                                                 this->_meshLayer->cleanup();
-                                                this->_content->draw(this->_type);
-                                                this->_content->transform();
+                                              
+                                                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/30.0),dispatch_get_main_queue(),^{
+                                                    
+                                                    this->_content->draw(this->_type);
+                                                    this->_content->transform();
+                                                    
+                                                    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
+                                                
+                                                });
                                             });
-                                            
                                         }
-                                        
-                                       
-                                        
-                                        [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
-
                                     }
                                 }
                             }
