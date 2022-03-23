@@ -28,7 +28,6 @@ fragment float4 fragmentShader(VertInOut inFrag[[stage_in]], constant FragmentSh
     constexpr float scale = 1.0/MAP_SCALE;
 
     if(args.type[0]==Type::RGB) {
-        
         float4 map = args.map.sample(sampler,inFrag.texcoord);
         
         float2 resolution = args.resolution[0].xy-1.0;
