@@ -43,7 +43,7 @@ enum Mode {
 };
 
 namespace Config {
-    unsigned int mode = Mode::MESH;
+    unsigned int mode = Mode::SMUDGE;
 };
 
 #import "Droppable.h"

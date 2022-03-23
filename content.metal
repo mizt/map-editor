@@ -27,10 +27,12 @@ fragment float4 fragmentShader(VertInOut inFrag[[stage_in]], constant FragmentSh
     
     if(args.type[0]==Type::RGB) {
         
+        float scale = 1.0/SCALE;
+        
         float4 map = args.map.sample(sampler,inFrag.texcoord);
         
-        float x = ((((int(map.a*255.0))<<8|(int(map.b*255.0)))-32767.0)*0.25)/(args.resolution[0].x-1.0);
-        float y = ((((int(map.g*255.0))<<8|(int(map.r*255.0)))-32767.0)*0.25)/(args.resolution[0].y-1.0);
+        float x = ((((int(map.a*255.0))<<8|(int(map.b*255.0)))-21845.0)*scale)/(args.resolution[0].x-1.0);
+        float y = ((((int(map.g*255.0))<<8|(int(map.r*255.0)))-21845.0)*scale)/(args.resolution[0].y-1.0);
         
         return float4(args.texture.sample(sampler,float2(x,y)));
     }

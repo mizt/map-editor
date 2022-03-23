@@ -17,7 +17,6 @@ class MeshLayer : public MetalBaseLayer<T> {
     
         bool setup() {
             
-            
             MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatRG16Unorm,this->_width,this->_height);
             if(!textureDescriptor) return false;
             
@@ -117,7 +116,7 @@ class MeshLayer : public MetalBaseLayer<T> {
                 this->MAP = new unsigned int[width*height];
                 for(int i=0; i<height; i++) {
                     for(int j=0; j<width; j++) {
-                        this->MAP[i*width+j] = (0x7FFF+((int)(j*4.0)))<<16|(0x7FFF+((int)(i*4.0)));
+                        this->MAP[i*width+j] = (0x5555+((int)(j*SCALE)))<<16|(0x5555+((int)(i*SCALE)));
                     }
                 }
             }
@@ -127,7 +126,7 @@ class MeshLayer : public MetalBaseLayer<T> {
             }
             
             if(!this->_data) {
-                this->_data = new T(8,8);
+                this->_data = new T(width>>3,height>>3);
             }
                     
             return MetalBaseLayer<T>::init(width,height,shader,identifier,blendingEnabled);

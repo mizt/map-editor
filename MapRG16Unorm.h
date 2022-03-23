@@ -1,3 +1,5 @@
+#import "Types.h"
+
 class MapRG16UnormBase {
 
     protected:
@@ -71,7 +73,7 @@ class MapRG16UnormBase {
             this->_map[0] = new unsigned int[w*h];
             for(int i=0; i<h; i++) {
                 for(int j=0; j<w; j++) {
-                    this->_map[0][i*w+j] = (0x7FFF+j*4)<<16|(0x7FFF+i*4);
+                    this->_map[0][i*w+j] = ((int)(0x5555+j*SCALE))<<16|(int)(0x5555+i*SCALE);
                 }
             }
             

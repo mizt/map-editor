@@ -3,6 +3,8 @@ enum Type {
     MAP = 1
 };
 
+#define SCALE 8.0
+
 #define STAGE_WIDTH 1600
 #define STAGE_HEIGHT 900
 
