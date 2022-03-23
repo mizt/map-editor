@@ -23,16 +23,17 @@ vertex VertInOut vertexShader(constant float4 *pos[[buffer(0)]], constant packed
 }
 
 fragment float4 fragmentShader(VertInOut inFrag[[stage_in]], constant FragmentShaderArguments &args[[buffer(0)]]) {
-    constexpr sampler sampler(address::clamp_to_edge, filter::linear);
     
+    constexpr sampler sampler(address::clamp_to_edge, filter::linear);
+    constexpr float scale = 1.0/MAP_SCALE;
+
     if(args.type[0]==Type::RGB) {
-        
-        float scale = 1.0/SCALE;
         
         float4 map = args.map.sample(sampler,inFrag.texcoord);
         
-        float x = ((((int(map.a*255.0))<<8|(int(map.b*255.0)))-21845.0)*scale)/(args.resolution[0].x-1.0);
-        float y = ((((int(map.g*255.0))<<8|(int(map.r*255.0)))-21845.0)*scale)/(args.resolution[0].y-1.0);
+        float2 resolution = args.resolution[0].xy-1.0;
+        float x = ((((int(map.a*255.0))<<8|(int(map.b*255.0)))-MAP_OFFSET)*scale)/resolution.x;
+        float y = ((((int(map.g*255.0))<<8|(int(map.r*255.0)))-MAP_OFFSET)*scale)/resolution.y;
         
         return float4(args.texture.sample(sampler,float2(x,y)));
     }

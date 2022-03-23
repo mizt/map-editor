@@ -73,7 +73,7 @@ class MapRG16UnormBase {
             this->_map[0] = new unsigned int[w*h];
             for(int i=0; i<h; i++) {
                 for(int j=0; j<w; j++) {
-                    this->_map[0][i*w+j] = ((int)(0x5555+j*SCALE))<<16|(int)(0x5555+i*SCALE);
+                    this->_map[0][i*w+j] = ((int)(0x5555+j*MAP_SCALE))<<16|(int)(0x5555+i*MAP_SCALE);
                 }
             }
             

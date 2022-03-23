@@ -14,8 +14,8 @@ class Smudge : public MapRG16UnormBase {
         void resetMap() {
             for(int i=0; i<this->height; i++) {
                 for(int j=0; j<this->width; j++) {
-                    this->_map[0][i*this->width+j] = ((int)(0x5555+j*SCALE))<<16|(int)(0x5555+i*SCALE);
-                    this->_map[1][i*this->width+j] = ((int)(0x5555+j*SCALE))<<16|(int)(0x5555+i*SCALE);
+                    this->_map[0][i*this->width+j] = ((int)(0x5555+j*MAP_SCALE))<<16|(int)(0x5555+i*MAP_SCALE);
+                    this->_map[1][i*this->width+j] = ((int)(0x5555+j*MAP_SCALE))<<16|(int)(0x5555+i*MAP_SCALE);
                 }
             }
         }

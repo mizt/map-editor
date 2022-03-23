@@ -116,7 +116,7 @@ class MeshLayer : public MetalBaseLayer<T> {
                 this->MAP = new unsigned int[width*height];
                 for(int i=0; i<height; i++) {
                     for(int j=0; j<width; j++) {
-                        this->MAP[i*width+j] = (0x5555+((int)(j*SCALE)))<<16|(0x5555+((int)(i*SCALE)));
+                        this->MAP[i*width+j] = (0x5555+((int)(j*MAP_SCALE)))<<16|(0x5555+((int)(i*MAP_SCALE)));
                     }
                 }
             }
