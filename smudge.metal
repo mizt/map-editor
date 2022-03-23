@@ -1,4 +1,4 @@
-#include <metal_stdlib>
+#import <metal_stdlib>
 using namespace metal;
 
 constexpr sampler linear(filter::linear,coord::pixel,address::clamp_to_edge);

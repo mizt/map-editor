@@ -1,4 +1,6 @@
-#include <metal_stdlib>
+#import <metal_stdlib>
+#import "Types.h"
+
 using namespace metal;
 
 struct VertInOut {
@@ -23,8 +25,8 @@ fragment float4 fragmentShader(VertInOut inFrag[[stage_in]],constant FragmentSha
     
     float2 xy = args.texture.sample(sampler,inFrag.texcoord).rg;
     
-    unsigned short x = (unsigned short)(65535.0*xy.x);
-    unsigned short y = (unsigned short)(65535.0*xy.y);
+    unsigned short x = (unsigned short)(MAP_U16*xy.x);
+    unsigned short y = (unsigned short)(MAP_U16*xy.y);
     
     return float4(
         (y&0xFF)*f,

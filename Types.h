@@ -3,6 +3,8 @@ enum Type {
     MAP = 1
 };
 
+#define MAP_U16 ((float)(0xFFFF))
+
 #define MAP_SCALE 8.0
 #define MAP_OFFSET ((float)(0x5555))
 
@@ -10,6 +12,7 @@ enum Type {
 #define STAGE_HEIGHT 900
 
 #define FOOTER_HEIGHT 32
+
 #define WHITE 0xFFFFFFFF
 #define BLACK 0xFF000000
 
