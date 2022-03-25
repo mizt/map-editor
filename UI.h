@@ -95,7 +95,7 @@ class Footer {
                 color:#CCC;
             }
             
-            #container {
+            #footer {
                 width:100%;
                 height:32px;
                 background:rgb(64,64,64);
@@ -137,7 +137,7 @@ class Footer {
                 border-radius:50%;
             }
             
-            p {
+            #footer > p {
                 position:absolute;
                 top:0;
                 left:calc(100% - 58px);
@@ -152,7 +152,7 @@ class Footer {
         </style>
     </head>
     <body>
-        <div id="container">
+        <div id="footer">
             <form style="margin-left:9px;">
                 <input id="RGB" type="radio" checked name="mode" />
                 <label for="RGB">RGB</label>
