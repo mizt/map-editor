@@ -49,7 +49,7 @@
         }
         
         #contextmenu.appear {
-            display: block;
+            display:block;
         }
         
         #footer {
@@ -438,11 +438,14 @@ void main() {
                 });
                 
                 canvas.oncontextmenu = ()=>{ return false; }
-                canvas.addEventListener('contextmenu',(e)=>{
+                canvas.addEventListener("contextmenu",(e)=>{
                     menuitem.textContent = "Download "+((draw.uniforms.u_type==1)?"Map":"Image");
-                    contextmenu.style.left = e.pageX+"px";
-                    contextmenu.style.top = e.pageY+"px";
+                    contextmenu.style.left = (e.pageX-16)+"px";
+                    contextmenu.style.top = (e.pageY-30)+"px";
                     contextmenu.classList.add("appear");
+                    contextmenu.style.background = "#07F";
+                    contextmenu.style.color = "#EEE";
+                    
                 });
                 
                 window.addEventListener("mousedown",(e)=>{
