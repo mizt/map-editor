@@ -116,9 +116,7 @@
         
         const W = 1920;
         const H = 1080;
-        
-        const FH = 32; 
-        
+            
         const PNG_HEADER_SIZE = 58;
         
         const CLIP = function(value,max) { return (max<=value)?max:value; }
@@ -136,7 +134,7 @@
             return false;
         }
         
-        const img = new Image(); 
+        const img = new Image();
         img.onload = ()=>{
             
             const BUFFER = new Uint8Array((W*H)<<2);
@@ -144,9 +142,7 @@
             
             for(var k=0; k<W*H; k++) {
                 const addr = k<<2;
-                BLACK[addr+0] = 0;
-                BLACK[addr+1] = 0;
-                BLACK[addr+2] = 0;
+                BLACK[addr+0] = BLACK[addr+1] = BLACK[addr+2] = 0;
                 BLACK[addr+3] = 255;
             }
             
@@ -288,22 +284,21 @@ in vec2 v_texCoord;
 uniform sampler2D u_map; 
 uniform vec2 u_cursor;
 uniform vec2 u_prevCursor;
+uniform vec2 u_resolution;
 out vec2 FragColor;
 void main() { 
-    vec2 resolution = vec2(1919,1079);
-    vec2 uv = v_texCoord;
-    vec2 aspect = vec2(1.0,resolution.y/resolution.x);
+    vec2 aspect = vec2(1.0,u_resolution.y/u_resolution.x);
     float radius=0.4;
-    vec2 cursorOffset = u_cursor-u_prevCursor;
-    float mask = smoothstep(radius,0.0,distance((uv*2.0-1.0)*aspect,((u_cursor/vec2(resolution))*2.0-1.0)*aspect));
-    vec2 dir = cursorOffset/vec2(resolution)*mask*0.5;
-    vec2 uv2 = uv - dir;
-    FragColor = vec2(texture(u_map,uv2).rg); 
+    float mask = 0.5*smoothstep(radius,0.0,distance((2.0*v_texCoord-1.0)*aspect,(2.0*(u_cursor/(u_resolution-1.0))-1.0)*aspect));
+    vec2 dir = ((u_cursor-u_prevCursor)/(u_resolution-1.0))*mask;
+    FragColor = texture(u_map,v_texCoord-dir).rg; 
 }`
             };
             update.program = twgl.createProgramFromSources(gl,[VS,update.fs]);
             update.info = twgl.createProgramInfoFromProgram(gl,update.program);
-            update.uniforms = {};
+            update.uniforms = {
+                u_resolution:[W,H]
+            };
             
             const draw = {
                 fs:`#version 300 es
@@ -312,12 +307,12 @@ in vec2 v_texCoord;
 uniform sampler2D u_jpg; 
 uniform sampler2D u_map; 
 uniform int u_type;
+uniform vec2 u_resolution;
 out vec4 FragColor;
 void main() {
     if(u_type==0) {
         ivec2 xy = ivec2(65535.0*texture(u_map,vec2(v_texCoord.x,1.0-v_texCoord.y)).rg)-21845;
-        vec2 uv = (vec2(xy)/8.0)/vec2(1919.0,1080.0);
-        FragColor = vec4(texture(u_jpg,uv));
+        FragColor = texture(u_jpg,(vec2(xy)/8.0)/(u_resolution-1.0));
     }
     else {
         ivec2 xy = ivec2(65535.0*texture(u_map,vec2(v_texCoord.x,1.0-v_texCoord.y)).rg);
@@ -332,7 +327,9 @@ void main() {
             };
             draw.program = twgl.createProgramFromSources(gl,[VS,draw.fs]);
             draw.info = twgl.createProgramInfoFromProgram(gl,draw.program);
-            draw.uniforms = {};
+            draw.uniforms = {
+                u_resolution:[W,H]
+            };
                 
             const jpg = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D,jpg);
@@ -500,12 +497,22 @@ void main() {
                 }
             };
             
+            const FH = 32; 
+            const MARGIN_SCALE = 0.1;
+            const MIN_MARGIN = 24; 
+            
             const resize = ()=>{
-                const w = CLIP(window.innerWidth*0.92,W);
-                const h = CLIP(window.innerHeight*0.8,H-FH);
+                let w = CLIP(window.innerWidth,W);
+                let h = CLIP(window.innerHeight-FH,H-FH);
+                
+                h-=(h*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(h*MARGIN_SCALE);
+                w-=(w*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(w*MARGIN_SCALE);
+                
                 if(!(stage.width==w&&stage.height==h)) {
-                    if(w>h*(W/H)) {
-                        const width = (h/H)*W;
+                    if(w/W>h/(H-FH)) {
+                        
+
+                        const width = (h/(H-FH))*W;
                         Object.assign(canvas.style,{
                             left:((window.innerWidth-width)>>1)+"px",
                             top:(((window.innerHeight-FH)-h)>>1)+"px",
@@ -514,7 +521,7 @@ void main() {
                         });
                     }
                     else {
-                        const height = (w/W)*H;
+                        const height = (w/W)*(H-FH);
                         Object.assign(canvas.style,{
                             left:((window.innerWidth-w)>>1)+"px",
                             top:(((window.innerHeight-FH)-height)>>1)+"px",
