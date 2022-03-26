@@ -504,14 +504,10 @@ void main() {
             const resize = ()=>{
                 let w = CLIP(window.innerWidth,W);
                 let h = CLIP(window.innerHeight-FH,H-FH);
-                
                 h-=(h*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(h*MARGIN_SCALE);
                 w-=(w*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(w*MARGIN_SCALE);
-                
                 if(!(stage.width==w&&stage.height==h)) {
                     if(w/W>h/(H-FH)) {
-                        
-
                         const width = (h/(H-FH))*W;
                         Object.assign(canvas.style,{
                             left:((window.innerWidth-width)>>1)+"px",
