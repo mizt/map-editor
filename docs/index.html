@@ -292,8 +292,7 @@ void main() {
     float mask = 0.5*smoothstep(radius,0.0,distance((2.0*v_texCoord-1.0)*aspect,(2.0*(u_cursor/(u_resolution-1.0))-1.0)*aspect));
     vec2 dir = ((u_cursor-u_prevCursor)/(u_resolution-1.0))*mask;
     FragColor = texture(u_map,v_texCoord-dir).rg; 
-}`
-            };
+}`};
             update.program = twgl.createProgramFromSources(gl,[VS,update.fs]);
             update.info = twgl.createProgramInfoFromProgram(gl,update.program);
             update.uniforms = {
@@ -323,8 +322,7 @@ void main() {
             float(xy.x>>8)/255.0
         );
     }
-}`
-            };
+}`};
             draw.program = twgl.createProgramFromSources(gl,[VS,draw.fs]);
             draw.info = twgl.createProgramInfoFromProgram(gl,draw.program);
             draw.uniforms = {

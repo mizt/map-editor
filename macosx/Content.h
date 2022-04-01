@@ -175,6 +175,14 @@ class Content {
             this->resetMap();
         }
     
+        void jpeg(NSData *rgb) {
+            this->jpeg(this->RGB,rgb,this->_width,this->_height);
+        }
+    
+        void png(NSData *map) {
+            this->png(this->RESET,map,this->_width,this->_height);
+        }
+    
         void set(NSData *rgb, NSData *map) {
             this->jpeg(this->RGB,rgb,this->_width,this->_height);
             this->png(this->RESET,map,this->_width,this->_height);
@@ -193,7 +201,6 @@ class Content {
                     this->transform();
                 });
             });
-            
         }
     
         void exportMap() {
@@ -224,12 +231,22 @@ class Content {
             
             if(this->RGB) delete this->RGB;
             this->RGB = new unsigned int[w*h];
+            for(int i=0; i<h; i++) {
+                for(int j=0; j<w; j++) {
+                    this->RGB[i*w+j] = 0xFFFF0000;
+                }
+            }
             
             if(this->MAP) delete this->MAP;
             this->MAP = new unsigned int[w*h];
             
             if(this->RESET) delete this->RESET;
             this->RESET = new unsigned int[w*h];
+            for(int i=0; i<h; i++) {
+                for(int j=0; j<w; j++) {
+                    this->MAP[i*w+j] = this->RESET[i*w+j] = (0x5555+((int)(j*MAP_SCALE)))<<16|(0x5555+((int)(i*MAP_SCALE)));
+                }
+            }
             
             if(this->buffer[0]) delete this->buffer[0];
 
@@ -243,6 +260,7 @@ class Content {
             this->_layer = new ContentLayer<Plane>();
             if(this->_layer->init(this->_width,this->_height,@"content.metallib",[[NSBundle mainBundle] bundleIdentifier])) {
                 
+                this->_layer->RGB(this->RGB);
                 this->_layer->resolution(this->_width,this->_height);
                 
                 this->_view.layer = this->_layer->layer();

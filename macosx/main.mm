@@ -42,8 +42,13 @@ enum Mode {
     MESH = 3
 };
 
+namespace Info {
+    unsigned short width = 0;
+    unsigned short height = 0;
+}
+
 namespace Config {
-    unsigned int mode = Mode::SMUDGE;
+    unsigned int mode = Mode::MESH;
 };
 
 #import "Droppable.h"
@@ -121,6 +126,39 @@ class App : public Droppable {
                 queue:[NSOperationQueue mainQueue]
                 usingBlock:on
             ];
+        }
+    
+        void initialize() {
+            NSString *path = FileManager::addPlatform(FileManager::path(@"smudge.metallib",[[NSBundle mainBundle] bundleIdentifier]));
+            if(this->_smudge) delete[] this->_smudge;
+            this->_smudge = new Smudge(Info::width,Info::height,path);
+            
+            if(Config::mode==Mode::MESH) {
+                this->_meshLayer = new MeshLayer<Mesh>();
+                if(this->_meshLayer->init(Info::width,Info::height,@"mesh.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
+                    NSLog(@"Mesh");
+                    this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
+                        
+                        this->_content->copy(this->_meshLayer->getByte());
+                        this->_meshLayer->cleanup();
+                      
+                        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/30.0),dispatch_get_main_queue(),^{
+                            
+                            this->_content->draw(this->_type);
+                            this->_content->transform();
+                            
+                            [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
+                        
+                        });
+                    });
+                }
+            }
+            else {
+                this->_content->draw(this->_type);
+                this->_content->transform();
+                
+                [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
+            }
         }
     
     public:
@@ -204,51 +242,98 @@ class App : public Droppable {
                                     int h = parser->height(Type::RGB);
                                     if(w>=1&&h>=1&&w==parser->width(Type::MAP)&&h==parser->height(Type::MAP)) {
                                         
-                                        NSString *path = FileManager::addPlatform(FileManager::path(@"smudge.metallib",[[NSBundle mainBundle] bundleIdentifier]));
+                                        Info::width = w;
+                                        Info::height = h;
+                              
 
-                                        if(this->_smudge) delete[] this->_smudge;
-                                        this->_smudge = new Smudge(w,h,path);
-
-                                        this->_content = new Content(w,h);
+                                        this->_content = new Content(Info::width,Info::height);
                                         [this->_view addSubview:this->_content->view()];
                                         int frame = 0;
+                                        
                                         this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
                                         
-                                        if(Config::mode==Mode::MESH) {
-                                            this->_meshLayer = new MeshLayer<Mesh>();
-                                            if(this->_meshLayer->init(w,h,@"mesh.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
-                                                NSLog(@"Mesh");
-                                                this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
-                                                    
-                                                    this->_content->copy(this->_meshLayer->getByte());
-                                                    this->_meshLayer->cleanup();
-                                                  
-                                                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/30.0),dispatch_get_main_queue(),^{
-                                                        
-                                                        this->_content->draw(this->_type);
-                                                        this->_content->transform();
-                                                        
-                                                        [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
-                                                    
-                                                    });
-                                                });
-                                            }
-                                        }
-                                        else {
-                                            this->_content->draw(this->_type);
-                                            this->_content->transform();
-                                            
-                                            [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:@"onload" object:nil]];
-                                        }
+                                        
+                                        this->initialize();
+                                        
                                     }
                                 }
                             }
                         }
+                        else if([path.pathExtension isEqualToString:@"jpg"]) {
+                            NSLog(@"<jpg>");
+                            
+                            NSData *jpg = [[NSData alloc] initWithContentsOfFile:path];
+                            if(jpg) {
+                                unsigned char *bytes = (unsigned char *)[jpg bytes];
+                                unsigned long length = [jpg length];
+                                
+                                int width;
+                                int height;
+                                int subsample;
+                                int colorspace;
+                                
+                                tjhandle handle = tjInitDecompress();
+
+                                
+                                if(!tjDecompressHeader3(handle,bytes,length,&width,&height,&subsample,&colorspace)) {
+                                    
+                                    Info::width = width;
+                                    Info::height = height;
+                                    
+                                    this->_content = new Content(Info::width,Info::height);
+                                    [this->_view addSubview:this->_content->view()];
+                                    
+                                    this->_content->jpeg(jpg);
+                                    this->_content->resetMap();
+                                    
+                                    this->initialize();
+                                
+                                }
+                                
+                                tjDestroy(handle);
+                            }
+                            
+                        }
+                        else if([path.pathExtension isEqualToString:@"png"]) {
+                            
+                            NSData *png = [[NSData alloc] initWithContentsOfFile:path];
+                            if(png) {
+                                
+                                unsigned char *bytes = (unsigned char *)[png bytes];
+                                unsigned long length = [png length];
+                                
+                                spng_ctx *ctx = spng_ctx_new(0);
+                                spng_set_crc_action(ctx,SPNG_CRC_USE,SPNG_CRC_USE);
+                                spng_set_png_buffer(ctx,bytes,length);
+                                struct spng_ihdr ihdr;
+                                spng_get_ihdr(ctx,&ihdr);
+                                
+                                Info::width = ihdr.width;
+                                Info::height = ihdr.height;
+                               
+                                spng_ctx_free(ctx);
+                                
+                                this->_content = new Content(Info::width,Info::height);
+                                [this->_view addSubview:this->_content->view()];
+                                
+                                this->_content->png(png);
+                                this->initialize();
+                                
+                                //NSLog(@"%d,%d",Info::width,Info::height);
+                                
+                            }
+                        }
                     }
                     else {
+                        
                         if(this->_content) {
                             NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
                             if([path.pathExtension isEqualToString:@"png"]) {
+                                NSData *png = [[NSData alloc] initWithContentsOfFile:path];
+                                this->_content->set(png);
+                                if(this->_smudge) this->_smudge->setMap(this->_content->map());
+                            }
+                            else if([path.pathExtension isEqualToString:@"jpg"]) {
                                 NSData *png = [[NSData alloc] initWithContentsOfFile:path];
                                 this->_content->set(png);
                                 if(this->_smudge) this->_smudge->setMap(this->_content->map());
