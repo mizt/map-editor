@@ -233,6 +233,9 @@ class App : public Droppable {
                     this->_isDrop = false;
                     
                     if(this->_content==nil) {
+                        
+                        int frame = 0;
+                        
                         NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
                         if([path.pathExtension isEqualToString:@"mov"]) {
                             MultiTrackQTMovie::Parser *parser = new MultiTrackQTMovie::Parser(path);
@@ -241,29 +244,23 @@ class App : public Droppable {
                                     int w = parser->width(Type::RGB);
                                     int h = parser->height(Type::RGB);
                                     if(w>=1&&h>=1&&w==parser->width(Type::MAP)&&h==parser->height(Type::MAP)) {
-                                        
                                         Info::width = w;
                                         Info::height = h;
-                              
-
                                         this->_content = new Content(Info::width,Info::height);
                                         [this->_view addSubview:this->_content->view()];
-                                        int frame = 0;
-                                        
-                                        this->_content->set(parser->get(frame,Type::RGB),parser->get(frame,Type::MAP));
-                                        
-                                        
+                                        this->_content->png(parser->get(frame,Type::MAP));
+                                        this->_content->jpeg(parser->get(frame,Type::RGB));
+                                        this->_content->resetMap();
                                         this->initialize();
-                                        
                                     }
                                 }
                             }
                         }
                         else if([path.pathExtension isEqualToString:@"jpg"]) {
-                            NSLog(@"<jpg>");
                             
                             NSData *jpg = [[NSData alloc] initWithContentsOfFile:path];
                             if(jpg) {
+                                
                                 unsigned char *bytes = (unsigned char *)[jpg bytes];
                                 unsigned long length = [jpg length];
                                 
@@ -273,7 +270,6 @@ class App : public Droppable {
                                 int colorspace;
                                 
                                 tjhandle handle = tjInitDecompress();
-
                                 
                                 if(!tjDecompressHeader3(handle,bytes,length,&width,&height,&subsample,&colorspace)) {
                                     
@@ -318,9 +314,7 @@ class App : public Droppable {
                                 
                                 this->_content->png(png);
                                 this->initialize();
-                                
-                                //NSLog(@"%d,%d",Info::width,Info::height);
-                                
+                                                                
                             }
                         }
                     }
@@ -330,13 +324,59 @@ class App : public Droppable {
                             NSString *path = [[NSURL URLFromPasteboard:[sender draggingPasteboard]] path];
                             if([path.pathExtension isEqualToString:@"png"]) {
                                 NSData *png = [[NSData alloc] initWithContentsOfFile:path];
-                                this->_content->set(png);
-                                if(this->_smudge) this->_smudge->setMap(this->_content->map());
+                                if(png) {
+                                    
+                                    unsigned char *bytes = (unsigned char *)[png bytes];
+                                    unsigned long length = [png length];
+                                    
+                                    spng_ctx *ctx = spng_ctx_new(0);
+                                    spng_set_crc_action(ctx,SPNG_CRC_USE,SPNG_CRC_USE);
+                                    spng_set_png_buffer(ctx,bytes,length);
+                                    struct spng_ihdr ihdr;
+                                    spng_get_ihdr(ctx,&ihdr);
+                                    
+                                    if(Info::width==ihdr.width&&Info::height==ihdr.height) {
+                                        this->_content->png(png);
+                                        this->_content->resetMap();
+                                        if(this->_smudge) this->_smudge->setMap(this->_content->map());
+                                    }
+                                    else {
+                                        // reset
+                                    }
+                                    
+                                    spng_ctx_free(ctx);
+                                    
+                                    
+                                }
                             }
                             else if([path.pathExtension isEqualToString:@"jpg"]) {
-                                NSData *png = [[NSData alloc] initWithContentsOfFile:path];
-                                this->_content->set(png);
-                                if(this->_smudge) this->_smudge->setMap(this->_content->map());
+                                
+                                NSData *jpg = [[NSData alloc] initWithContentsOfFile:path];
+                                if(jpg) {
+                                    
+                                    unsigned char *bytes = (unsigned char *)[jpg bytes];
+                                    unsigned long length = [jpg length];
+                                    
+                                    int width;
+                                    int height;
+                                    int subsample;
+                                    int colorspace;
+                                    
+                                    tjhandle handle = tjInitDecompress();
+                                    if(!tjDecompressHeader3(handle,bytes,length,&width,&height,&subsample,&colorspace)) {
+                                        if(Info::width==width&&Info::height==height) {
+                                            this->_content->jpeg(jpg);
+                                            this->_content->resetMap();
+                                            
+                                        }
+                                        else {
+                                            // reset
+                                        }
+                                    }
+                                    tjDestroy(handle);
+                                }
+                                
+                                
                             }
                         }
                     }

@@ -170,11 +170,6 @@ class Content {
             }
         }
     
-        void set(NSData *map) {
-            this->png(this->RESET,map,this->_width,this->_height);
-            this->resetMap();
-        }
-    
         void jpeg(NSData *rgb) {
             this->jpeg(this->RGB,rgb,this->_width,this->_height);
         }
@@ -183,12 +178,7 @@ class Content {
             this->png(this->RESET,map,this->_width,this->_height);
         }
     
-        void set(NSData *rgb, NSData *map) {
-            this->jpeg(this->RGB,rgb,this->_width,this->_height);
-            this->png(this->RESET,map,this->_width,this->_height);
-            this->resetMap();
-        }
-        
+       
         void resetMap() {
             for(int k=0; k<this->_width*this->_height; k++) this->MAP[k] = this->RESET[k];
             
