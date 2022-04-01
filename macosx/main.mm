@@ -136,7 +136,6 @@ class App : public Droppable {
             if(Config::mode==Mode::MESH) {
                 this->_meshLayer = new MeshLayer<Mesh>();
                 if(this->_meshLayer->init(Info::width,Info::height,@"mesh.metallib",[[NSBundle mainBundle] bundleIdentifier],false)) {
-                    NSLog(@"Mesh");
                     this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
                         
                         this->_content->copy(this->_meshLayer->getByte());
@@ -341,11 +340,61 @@ class App : public Droppable {
                                         if(this->_smudge) this->_smudge->setMap(this->_content->map());
                                     }
                                     else {
-                                        // reset
+                                        
+                                        
+                                        if(Config::mode==Mode::MESH) {
+                                                                    
+                                            Mesh *mesh = this->_meshLayer->data();
+                                            int mw = mesh->width();
+                                            int mh = mesh->height();
+                                            
+                                            if(mw==(ihdr.width>>1)&&mh==ihdr.height) {
+                                                
+                                                unsigned int *MV = new unsigned int[ihdr.width*ihdr.height];
+                                                
+                                                if(ihdr.color_type==SPNG_COLOR_TYPE_TRUECOLOR_ALPHA) {
+                                                    spng_decode_image(ctx,MV,ihdr.width*ihdr.height*4,SPNG_FMT_RGBA8,0);
+                                                }
+                                                
+                                                float *vertices = this->_meshLayer->vertices();
+                                                                                               
+                                                for(int i=1; i<mh-1; i++) {
+                                                    for(int j=1; j<mw-1; j++) {
+                                                        
+                                                        int src = i*ihdr.width+j*2;
+                                                        int dst = (i*mw+j)<<2;
+                                                        
+                                                        float mx = *((float *)(MV+src+0));
+                                                        float my = *((float *)(MV+src+1));
+
+                                                        vertices[dst+0] = ((j/((float)(mw-1)))*2.0-1.0)+(mx/mw)*1.0;
+                                                        vertices[dst+1] = ((i/((float)(mh-1)))*2.0-1.0)+(my/mh)*1.0;
+                                                        
+                                                    }
+                                                }
+                                                
+                                                delete[] MV;
+                                                
+                                                this->_meshLayer->update(^(id<MTLCommandBuffer> commandBuffer){
+                                                    
+                                                    this->_content->copy(this->_meshLayer->getByte());
+                                                    this->_meshLayer->cleanup();
+                                                    
+                                                    this->_content->draw(this->_type);
+                                                    this->_content->transform();
+                                                    
+                                                });
+                                                
+                                            }
+                                        }
+                                        else {
+                                            
+                                            // reset
+                                            
+                                        }
                                     }
                                     
                                     spng_ctx_free(ctx);
-                                    
                                     
                                 }
                             }

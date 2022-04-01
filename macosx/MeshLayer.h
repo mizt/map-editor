@@ -15,6 +15,10 @@ class MeshLayer : public MetalBaseLayer<T> {
             return this->_data;
         }
     
+        float *vertices() {
+            return (float *)[this->_verticesBuffer contents];
+        }
+    
         bool setup() {
             
             MTLTextureDescriptor *textureDescriptor = MTLUtils::descriptor(MTLPixelFormatRG16Unorm,this->_width,this->_height);
@@ -49,31 +53,9 @@ class MeshLayer : public MetalBaseLayer<T> {
         }
     
         id<MTLCommandBuffer> setupCommandBuffer() {
-            
-            // randomize
-            
+                        
             [this->_texture replaceRegion:MTLRegionMake2D(0,0,this->_width,this->_height) mipmapLevel:0 withBytes:this->MAP bytesPerRow:this->_width<<2];
-            
-            Mesh *mesh = this->_data;
-            
-            int w = mesh->width();
-            int h = mesh->height();
-            
-            //NSLog(@"%d,%d",w,h);
-            
-            float *vertices = (float *)[this->_verticesBuffer contents];
-            
-            for(int i=1; i<h-1; i++) {
-                for(int j=1; j<w-1; j++) {
-                    
-                    int addr = (i*w+j)<<2;
-
-                    vertices[addr+0] = (j/((float)(w-1)))*2.0-1.0 + (((random()%200)*0.01)-1.0)/(float)(w-1);
-                    vertices[addr+1] = (i/((float)(h-1)))*2.0-1.0 + (((random()%200)*0.01)-1.0)/(float)(h-1);
-                    
-                }
-            }
-            
+           
             id<MTLCommandBuffer> commandBuffer = [this->_commandQueue commandBuffer];
             
             this->setupColorAttachment(this->_renderPassDescriptor.colorAttachments[0]);
@@ -126,6 +108,7 @@ class MeshLayer : public MetalBaseLayer<T> {
             }
             
             if(!this->_data) {
+                NSLog(@"%d,%d",width>>3,height>>3);
                 this->_data = new T(width>>3,height>>3);
             }
                     
