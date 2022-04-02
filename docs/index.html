@@ -114,6 +114,32 @@
         // https://github.com/KoryNunn/crel
         (e=>{const t="function",n="isNode",o=(e,t)=>typeof e===t,r=(e,t)=>{null!==t&&(Array.isArray(t)?t.map(t=>r(e,t)):(i[n](t)||(t=document.createTextNode(t)),e.appendChild(t)))};function i(e,a){let d,f,l=arguments,c=1;if(e=i.isElement(e)?e:document.createElement(e),o(a,"object")&&!i[n](a)&&!Array.isArray(a))for(d in c++,a)f=a[d],o(d=i.attrMap[d]||d,t)?d(e,f):o(f,t)?e[d]=f:e.setAttribute(d,f);for(;c<l.length;c++)r(e,l[c]);return e}i.attrMap={},i.isElement=(e=>e instanceof Element),i[n]=(e=>e instanceof Node),i.proxy=new Proxy(i,{get:(e,t)=>(!(t in i)&&(i[t]=i.bind(null,t)),i[t])}),e(i,t)})((e,t)=>{"object"==typeof exports?module.exports=e:typeof define===t&&define.amd?define(()=>e):this.crel=e});
         
+        class U8 {
+            constructor(len) {
+                this.length = len;
+                this.bytes = Module._malloc(len);
+                this.buffer = new Uint8Array(Module.HEAPU8.buffer,this.bytes,len);
+                //console.log(this.bytes);
+            }
+            cleanup() {
+                Module._free(this.bytes);
+                this.buffer = null;
+            }
+        };
+        
+        class F32 {
+            constructor(len) {
+                this.length = len;
+                this.bytes = Module._malloc(len*4);
+                this.buffer = new Float32Array(Module.HEAPF32.buffer,this.bytes,len);
+                //console.log(this.bytes);
+            }
+            cleanup() {
+                Module._free(this.bytes);
+                this.buffer = null;
+            }
+        };
+        
         const Info = {
             W:1920,
             H:1080
@@ -135,55 +161,37 @@
             }
             return false;
         }
+            
+        window.addEventListener("dragover",(e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+        });
         
-        const img = new Image();
-        img.onload = ()=>{
+        const DEFAULT_IMAGE = new Image();
+        DEFAULT_IMAGE.onload = ()=>{
             
+            let frame = -1;
             
-            Info.W = img.naturalWidth;
-            Info.H = img.naturalHeight;
+            Info.W = DEFAULT_IMAGE.naturalWidth;
+            Info.H = DEFAULT_IMAGE.naturalHeight;
             
-            const BUFFER = new Uint8Array((Info.W*Info.H)<<2);
-            const BLACK = new Uint8Array((Info.W*Info.H)<<2);
-            
+            let PIXEL = new U8((Info.W*Info.H)<<2);
+            let PNG = new U8(PNG_HEADER_SIZE+((Info.W*Info.H)<<2));
+            let XY = new F32((Info.W*Info.H)<<1);
+            let BUFFER = new U8((Info.W*Info.H)<<2);
+            let BLACK = new U8((Info.W*Info.H)<<2);
             for(var k=0; k<Info.W*Info.H; k++) {
                 const addr = k<<2;
-                BLACK[addr+0] = BLACK[addr+1] = BLACK[addr+2] = 0;
-                BLACK[addr+3] = 255;
+                BLACK.buffer[addr+0] = BLACK.buffer[addr+1] = BLACK.buffer[addr+2] = 0;
+                BLACK.buffer[addr+3] = 255;
             }
-            
-            class U8 {
-                constructor(len) {
-                    this.length = len;
-                    this.bytes = Module._malloc(len);
-                    this.buffer = new Uint8Array(Module.HEAPU8.buffer,this.bytes,len);
-                }
-                cleanup() {
-                    Module._free(this.bytes);
-                }
-            };
-            
-            const buf = new U8((Info.W*Info.H)<<2);
-            const png = new U8(PNG_HEADER_SIZE+((Info.W*Info.H)<<2));
             
             const decodePNG = Module.cwrap("decodePNG","number",["number","number","number","number","number","number"]);
             const encodePNG = Module.cwrap("encodePNG","number",["number","number","number","number","number"]);
             
-            class F32 {
-                constructor(len) {
-                    this.length = len;
-                    this.bytes = Module._malloc(len);
-                    this.buffer = new Float32Array(Module.HEAPU8.buffer,this.bytes,len);
-                }
-                cleanup() {
-                    Module._free(this.bytes);
-                }
-            };
-            
-            const xy = new F32((Info.W*Info.H)<<1);
             const resetMap = Module.cwrap("resetMap","void",["number","number","number"]);
             const replaceMap = Module.cwrap("replaceMap","void",["number","number","number","number"]);
-            resetMap(xy.buffer.byteOffset,Info.W,Info.H);
+            resetMap(XY.buffer.byteOffset,Info.W,Info.H);
             
             const download = ()=>{
                 
@@ -192,10 +200,10 @@
                         for(var j=0; j<Info.W; j++) {
                             const dst = (i*Info.W+j)<<2;
                             const src = (((Info.H-1)-i)*Info.W+j)<<2;
-                            buf.buffer[dst+0] = BUFFER[src+0];
-                            buf.buffer[dst+1] = BUFFER[src+1];
-                            buf.buffer[dst+2] = BUFFER[src+2];
-                            buf.buffer[dst+3] = BUFFER[src+3];
+                            PIXEL.buffer[dst+0] = BUFFER.buffer[src+0];
+                            PIXEL.buffer[dst+1] = BUFFER.buffer[src+1];
+                            PIXEL.buffer[dst+2] = BUFFER.buffer[src+2];
+                            PIXEL.buffer[dst+3] = BUFFER.buffer[src+3];
                         }
                     }
                 }
@@ -204,17 +212,17 @@
                         for(var j=0; j<Info.W; j++) {
                             const dst = (i*Info.W+j)<<2;
                             const src = (((Info.H-1)-i)*Info.W+j)<<2;
-                            buf.buffer[dst+0] = BUFFER[src+2];
-                            buf.buffer[dst+1] = BUFFER[src+1];
-                            buf.buffer[dst+2] = BUFFER[src+0];
-                            buf.buffer[dst+3] = BUFFER[src+3];
+                            PIXEL.buffer[dst+0] = BUFFER.buffer[src+2];
+                            PIXEL.buffer[dst+1] = BUFFER.buffer[src+1];
+                            PIXEL.buffer[dst+2] = BUFFER.buffer[src+0];
+                            PIXEL.buffer[dst+3] = BUFFER.buffer[src+3];
                         }
                     }
                 }
                 
-                const size = encodePNG(buf.buffer.byteOffset,Info.W,Info.H,4,png.buffer.byteOffset);
+                const size = encodePNG(PIXEL.buffer.byteOffset,Info.W,Info.H,4,PNG.buffer.byteOffset);
                 if(size>0) {
-                    const bytes = png.buffer.slice(0,size);
+                    const bytes = PNG.buffer.slice(0,size);
                     const link = crel("a");
                     link.download = (draw.uniforms.u_type==0)?"image.png":"map.png";
                     link.href = URL.createObjectURL(new Blob([bytes],{type:"image/png"}));
@@ -254,9 +262,10 @@
                 gl.drawElements(gl.TRIANGLES,bufferInfo.numElements,gl.UNSIGNED_SHORT,0);
             }
             
-            const createframebuffer = (w,h)=>{
-                const frameBuffer = gl.createFramebuffer();
-                gl.bindFramebuffer(gl.FRAMEBUFFER,frameBuffer);
+            const Framebuffer = {
+                create:(w,h)=>{
+                    const frameBuffer = gl.createFramebuffer();
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,frameBuffer);
                     const texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D,texture);
                     gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,w,h,0,gl.RG,gl.FLOAT,null);
@@ -264,13 +273,18 @@
                     gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
                     gl.bindTexture(gl.TEXTURE_2D,null);
                     gl.bindRenderbuffer(gl.RENDERBUFFER,null);
-                gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-                return { frameBuffer:frameBuffer, texture:texture };
-            }
+                    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+                    return { frameBuffer:frameBuffer, texture:texture };
+                },
+                cleanup:(fbo)=>{
+                    gl.deleteFramebuffer(fbo.frameBuffer);
+                    gl.deleteTexture(fbo.texture);
+                }
+            };
             
-            const FBO = [
-                createframebuffer(Info.W,Info.H),
-                createframebuffer(Info.W,Info.H)
+            let FBO = [
+                Framebuffer.create(Info.W,Info.H),
+                Framebuffer.create(Info.W,Info.H)
             ];
             
             const VS = `#version 300 es
@@ -334,21 +348,38 @@ void main() {
             draw.uniforms = {
                 u_resolution:[Info.W,Info.H]
             };
-                
-            const jpg = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D,jpg);
-            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,Info.W,Info.H,0,gl.RGBA,gl.UNSIGNED_BYTE,img);
-            setTexParameteri();
-            gl.bindTexture(gl.TEXTURE_2D,null);
+            
+            let jpg;
+            let map;
+            
+            const Texture = {
+                createU32:(img)=>{
+                    const texture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D,texture);
+                    setTexParameteri();
+                    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,Info.W,Info.H,0,gl.RGBA,gl.UNSIGNED_BYTE,img);
+                    gl.bindTexture(gl.TEXTURE_2D,null);
+                    return texture;
+                },
+                createF32:()=>{
+                    const texture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D,texture);
+                    setTexParameteri();
+                    gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,Info.W,Info.H,0,gl.RG,gl.FLOAT,XY.buffer);
+                    gl.bindTexture(gl.TEXTURE_2D,null);
+                    return texture;
+                },
+                cleanup:(texture)=>{
+                    gl.deleteTexture(texture);
+                }
+            }
+            
+            jpg = Texture.createU32(DEFAULT_IMAGE);
             draw.uniforms.u_jpg = jpg;
             
-            const map = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D,map);
-            gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,Info.W,Info.H,0,gl.RG,gl.FLOAT,xy.buffer);
-            setTexParameteri();
-            gl.bindTexture(gl.TEXTURE_2D,null);
+            map = Texture.createF32();
             
-            let frame = -1;
+            
             const onUpdate = ()=>{
                 update.uniforms.u_map = (frame!==-1)?FBO[(frame+1)&1].texture:map;
                 gl.bindFramebuffer(gl.FRAMEBUFFER,FBO[frame&1].frameBuffer);
@@ -458,7 +489,7 @@ void main() {
                     if(contextmenu.classList.contains("appear")) {
                         if(hitTest(x,y,contextmenu.getBoundingClientRect())) {
                             onDraw();
-                            gl.readPixels(0,0,Info.W,Info.H,gl.RGBA,gl.UNSIGNED_BYTE,BUFFER);
+                            gl.readPixels(0,0,Info.W,Info.H,gl.RGBA,gl.UNSIGNED_BYTE,BUFFER.buffer);
                             download();
                         }
                         contextmenu.classList.remove("appear");
@@ -572,11 +603,6 @@ void main() {
                 )
             );
             
-            window.addEventListener("dragover",(e)=>{
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            
             const replace = (src,w,h)=>{
                 gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,src);
             }
@@ -590,16 +616,72 @@ void main() {
                     if(file.type==="image/jpeg") {
                         const img = new Image();
                         img.onload = (e)=>{
-                            gl.bindTexture(gl.TEXTURE_2D,jpg);
-                            if(Info.W<=img.naturalWidth&&Info.H<=img.naturalHeight) {
+                            
+                            if(Info.W==img.naturalWidth&&Info.H==img.naturalHeight) {
+                                gl.bindTexture(gl.TEXTURE_2D,jpg);
                                 replace(img,Info.W,Info.H);
+                                gl.bindTexture(gl.TEXTURE_2D,null);
+                                onDraw();
                             }
                             else {
-                                replace(BLACK,Info.W,Info.H);
-                                replace(img,CLIP(img.naturalWidth,Info.W),CLIP(img.naturalHeight,Info.H));
+                                                                
+                                Info.W = img.naturalWidth;
+                                Info.H = img.naturalHeight;
+                                                                
+                                canvas.width = Info.W;
+                                canvas.height = Info.H;
+                                
+                                PIXEL.cleanup();
+                                PNG.cleanup();
+                                XY.cleanup();
+                                BUFFER.cleanup();
+                                BLACK.cleanup();
+                                
+                                PIXEL = new U8((Info.W*Info.H)<<2);
+                                PNG = new U8(PNG_HEADER_SIZE+((Info.W*Info.H)<<2));
+                                XY = new F32((Info.W*Info.H)<<1);
+                                BUFFER = new U8((Info.W*Info.H)<<2);
+                                BLACK = new U8((Info.W*Info.H)<<2);
+                                                                
+                                resetMap(XY.buffer.byteOffset,Info.W,Info.H);
+                                
+
+                                for(var k=0; k<Info.W*Info.H; k++) {
+                                    const addr = k<<2;
+                                    BLACK.buffer[addr+0] = BLACK.buffer[addr+1] = BLACK.buffer[addr+2] = 0;
+                                    BLACK.buffer[addr+3] = 255;
+                                }
+                                
+                                Texture.cleanup(jpg);
+                                Texture.cleanup(map);
+                                
+                                jpg = Texture.createU32(img);
+                                draw.uniforms.u_jpg = jpg;
+                                
+                                map = Texture.createF32();
+                                
+                                update.uniforms.u_resolution = [Info.W,Info.H];
+                                draw.uniforms.u_resolution = [Info.W,Info.H];
+                                
+                                Framebuffer.cleanup(FBO[0]);
+                                Framebuffer.cleanup(FBO[1]);
+                                
+                                FBO = [
+                                    Framebuffer.create(Info.W,Info.H),
+                                    Framebuffer.create(Info.W,Info.H)
+                                ];
+                                
+                                stage.width = stage.height = 0;
+                                resize();
+                                
+                                frame = -1;
+                                update.uniforms.u_prevCursor = [0.5,0.5];
+                                update.uniforms.u_cursor = [0.5,0.5];
+                                onUpdate();
+                                onDraw();
+                                
+                                
                             }
-                            gl.bindTexture(gl.TEXTURE_2D,null);
-                            onDraw();
                         };
                         img.src = url;
                     }
@@ -613,13 +695,14 @@ void main() {
                             }
                         }).then((arrayBuffer)=>{
                             const bytes = new Uint8Array(arrayBuffer);
-                            if(bytes.length<=png.length) {
-                                png.buffer.set(bytes);
-                                if(decodePNG(buf.buffer.byteOffset,Info.W,Info.H,png.buffer.byteOffset,bytes.length)) {
-                                    replaceMap(xy.buffer.byteOffset,Info.W,Info.H,buf.buffer.byteOffset);
+                            if(bytes.length<=PNG.length) {
+                                PNG.buffer.set(bytes);
+                                if(decodePNG(PIXEL.buffer.byteOffset,Info.W,Info.H,PNG.buffer.byteOffset,bytes.length)) {
+                                    replaceMap(XY.buffer.byteOffset,Info.W,Info.H,PIXEL.buffer.byteOffset);
                                     gl.bindTexture(gl.TEXTURE_2D,map);
-                                    gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,Info.W,Info.H,gl.RG,gl.FLOAT,xy.buffer);
+                                    gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,Info.W,Info.H,gl.RG,gl.FLOAT,XY.buffer);
                                     gl.bindTexture(gl.TEXTURE_2D,null);
+                                    
                                     frame = -1;
                                     update.uniforms.u_prevCursor = [0.5,0.5];
                                     update.uniforms.u_cursor = [0.5,0.5];
@@ -634,7 +717,7 @@ void main() {
                 }
             });
         }
-        img.src = "duster.jpg"
+        DEFAULT_IMAGE.src = "duster.jpg"
         
     </script>
 </body>
