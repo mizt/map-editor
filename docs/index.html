@@ -114,9 +114,11 @@
         // https://github.com/KoryNunn/crel
         (e=>{const t="function",n="isNode",o=(e,t)=>typeof e===t,r=(e,t)=>{null!==t&&(Array.isArray(t)?t.map(t=>r(e,t)):(i[n](t)||(t=document.createTextNode(t)),e.appendChild(t)))};function i(e,a){let d,f,l=arguments,c=1;if(e=i.isElement(e)?e:document.createElement(e),o(a,"object")&&!i[n](a)&&!Array.isArray(a))for(d in c++,a)f=a[d],o(d=i.attrMap[d]||d,t)?d(e,f):o(f,t)?e[d]=f:e.setAttribute(d,f);for(;c<l.length;c++)r(e,l[c]);return e}i.attrMap={},i.isElement=(e=>e instanceof Element),i[n]=(e=>e instanceof Node),i.proxy=new Proxy(i,{get:(e,t)=>(!(t in i)&&(i[t]=i.bind(null,t)),i[t])}),e(i,t)})((e,t)=>{"object"==typeof exports?module.exports=e:typeof define===t&&define.amd?define(()=>e):this.crel=e});
         
-        const W = 1920;
-        const H = 1080;
-            
+        const Info = {
+            W:1920,
+            H:1080
+        } 
+        
         const PNG_HEADER_SIZE = 58;
         
         const CLIP = function(value,max) { return (max<=value)?max:value; }
@@ -137,10 +139,14 @@
         const img = new Image();
         img.onload = ()=>{
             
-            const BUFFER = new Uint8Array((W*H)<<2);
-            const BLACK = new Uint8Array((W*H)<<2);
             
-            for(var k=0; k<W*H; k++) {
+            Info.W = img.naturalWidth;
+            Info.H = img.naturalHeight;
+            
+            const BUFFER = new Uint8Array((Info.W*Info.H)<<2);
+            const BLACK = new Uint8Array((Info.W*Info.H)<<2);
+            
+            for(var k=0; k<Info.W*Info.H; k++) {
                 const addr = k<<2;
                 BLACK[addr+0] = BLACK[addr+1] = BLACK[addr+2] = 0;
                 BLACK[addr+3] = 255;
@@ -157,8 +163,8 @@
                 }
             };
             
-            const buf = new U8((W*H)<<2);
-            const png = new U8(PNG_HEADER_SIZE+((W*H)<<2));
+            const buf = new U8((Info.W*Info.H)<<2);
+            const png = new U8(PNG_HEADER_SIZE+((Info.W*Info.H)<<2));
             
             const decodePNG = Module.cwrap("decodePNG","number",["number","number","number","number","number","number"]);
             const encodePNG = Module.cwrap("encodePNG","number",["number","number","number","number","number"]);
@@ -174,18 +180,18 @@
                 }
             };
             
-            const xy = new F32((W*H)<<1);
+            const xy = new F32((Info.W*Info.H)<<1);
             const resetMap = Module.cwrap("resetMap","void",["number","number","number"]);
             const replaceMap = Module.cwrap("replaceMap","void",["number","number","number","number"]);
-            resetMap(xy.buffer.byteOffset,W,H);
+            resetMap(xy.buffer.byteOffset,Info.W,Info.H);
             
             const download = ()=>{
                 
                 if(draw.uniforms.u_type==0) {
-                    for(var i=0; i<H; i++) {
-                        for(var j=0; j<W; j++) {
-                            const dst = (i*W+j)<<2;
-                            const src = (((H-1)-i)*W+j)<<2;
+                    for(var i=0; i<Info.H; i++) {
+                        for(var j=0; j<Info.W; j++) {
+                            const dst = (i*Info.W+j)<<2;
+                            const src = (((Info.H-1)-i)*Info.W+j)<<2;
                             buf.buffer[dst+0] = BUFFER[src+0];
                             buf.buffer[dst+1] = BUFFER[src+1];
                             buf.buffer[dst+2] = BUFFER[src+2];
@@ -194,10 +200,10 @@
                     }
                 }
                 else {
-                    for(var i=0; i<H; i++) {
-                        for(var j=0; j<W; j++) {
-                            const dst = (i*W+j)<<2;
-                            const src = (((H-1)-i)*W+j)<<2;
+                    for(var i=0; i<Info.H; i++) {
+                        for(var j=0; j<Info.W; j++) {
+                            const dst = (i*Info.W+j)<<2;
+                            const src = (((Info.H-1)-i)*Info.W+j)<<2;
                             buf.buffer[dst+0] = BUFFER[src+2];
                             buf.buffer[dst+1] = BUFFER[src+1];
                             buf.buffer[dst+2] = BUFFER[src+0];
@@ -217,7 +223,7 @@
                 }
             }
             
-            const canvas = crel("canvas",{width:W,height:H});
+            const canvas = crel("canvas",{width:Info.W,height:Info.H});
             crel(document.body,canvas);
             
             const gl = canvas.getContext("webgl2",{antialias:false});
@@ -239,7 +245,7 @@
             }
             
             const fill = (program,info,uniforms)=>{
-                gl.viewport(0,0,W,H);
+                gl.viewport(0,0,Info.W,Info.H);
                 gl.clearColor(0,0,0,0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.useProgram(program);
@@ -263,8 +269,8 @@
             }
             
             const FBO = [
-                createframebuffer(W,H),
-                createframebuffer(W,H)
+                createframebuffer(Info.W,Info.H),
+                createframebuffer(Info.W,Info.H)
             ];
             
             const VS = `#version 300 es
@@ -296,7 +302,7 @@ void main() {
             update.program = twgl.createProgramFromSources(gl,[VS,update.fs]);
             update.info = twgl.createProgramInfoFromProgram(gl,update.program);
             update.uniforms = {
-                u_resolution:[W,H]
+                u_resolution:[Info.W,Info.H]
             };
             
             const draw = {
@@ -326,19 +332,19 @@ void main() {
             draw.program = twgl.createProgramFromSources(gl,[VS,draw.fs]);
             draw.info = twgl.createProgramInfoFromProgram(gl,draw.program);
             draw.uniforms = {
-                u_resolution:[W,H]
+                u_resolution:[Info.W,Info.H]
             };
                 
             const jpg = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D,jpg);
-            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,W,H,0,gl.RGBA,gl.UNSIGNED_BYTE,img);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,Info.W,Info.H,0,gl.RGBA,gl.UNSIGNED_BYTE,img);
             setTexParameteri();
             gl.bindTexture(gl.TEXTURE_2D,null);
             draw.uniforms.u_jpg = jpg;
             
             const map = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D,map);
-            gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,W,H,0,gl.RG,gl.FLOAT,xy.buffer);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RG32F,Info.W,Info.H,0,gl.RG,gl.FLOAT,xy.buffer);
             setTexParameteri();
             gl.bindTexture(gl.TEXTURE_2D,null);
             
@@ -365,8 +371,8 @@ void main() {
             const onMouseDown = (px,py)=>{
                 mouse.click = true;
                 const rect = canvas.getBoundingClientRect();
-                const x = (px*(W/rect.width))>>0;
-                const y = (py*(H/rect.height))>>0;
+                const x = (px*(Info.W/rect.width))>>0;
+                const y = (py*(Info.H/rect.height))>>0;
                 mouse.x = x;
                 mouse.y = y;
             };
@@ -377,8 +383,8 @@ void main() {
                 if(current-then<16.6) return; 
                 then = current;
                 const rect = canvas.getBoundingClientRect();
-                const x = (px*(W/rect.width))>>0;
-                const y = (py*(H/rect.height))>>0;
+                const x = (px*(Info.W/rect.width))>>0;
+                const y = (py*(Info.H/rect.height))>>0;
                 update.uniforms.u_prevCursor = [mouse.x,mouse.y];
                 update.uniforms.u_cursor = [x,y];
                 mouse.x = x;
@@ -503,13 +509,13 @@ void main() {
             const MIN_MARGIN = 24; 
             
             const resize = ()=>{
-                let w = CLIP(window.innerWidth,W);
-                let h = CLIP(window.innerHeight-FH,H-FH);
+                let w = CLIP(window.innerWidth,Info.W);
+                let h = CLIP(window.innerHeight-FH,Info.H-FH);
                 h-=(h*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(h*MARGIN_SCALE);
                 w-=(w*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(w*MARGIN_SCALE);
                 if(!(stage.width==w&&stage.height==h)) {
-                    if(w/W>h/(H-FH)) {
-                        const width = (h/(H-FH))*W;
+                    if(w/Info.W>h/(Info.H-FH)) {
+                        const width = (h/(Info.H-FH))*Info.W;
                         Object.assign(canvas.style,{
                             left:((window.innerWidth-width)>>1)+"px",
                             top:(((window.innerHeight-FH)-h)>>1)+"px",
@@ -518,7 +524,7 @@ void main() {
                         });
                     }
                     else {
-                        const height = (w/W)*(H-FH);
+                        const height = (w/Info.W)*(Info.H-FH);
                         Object.assign(canvas.style,{
                             left:((window.innerWidth-w)>>1)+"px",
                             top:(((window.innerHeight-FH)-height)>>1)+"px",
