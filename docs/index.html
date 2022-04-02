@@ -540,16 +540,18 @@ void main() {
             const MIN_MARGIN = 24; 
             
             const resize = ()=>{
-                let w = CLIP(window.innerWidth,Info.W);
-                let h = CLIP(window.innerHeight-FH,Info.H-FH);
-                h-=(h*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(h*MARGIN_SCALE);
-                w-=(w*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(w*MARGIN_SCALE);
-                if(!(stage.width==w&&stage.height==h)) {
+                if(!((stage.width===window.innerWidth)&&(stage.height===window.innerHeight))) {
+                    stage.width = window.innerWidth;
+                    stage.height = window.innerHeight;
+                    let w = CLIP(stage.width,Info.W);
+                    let h = CLIP(stage.height-FH,Info.H-FH);
+                    h-=(h*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(h*MARGIN_SCALE);
+                    w-=(w*MARGIN_SCALE<MIN_MARGIN)?MIN_MARGIN:(w*MARGIN_SCALE);
                     if(w/Info.W>h/(Info.H-FH)) {
                         const width = (h/(Info.H-FH))*Info.W;
                         Object.assign(canvas.style,{
-                            left:((window.innerWidth-width)>>1)+"px",
-                            top:(((window.innerHeight-FH)-h)>>1)+"px",
+                            left:((stage.width-width)>>1)+"px",
+                            top:(((stage.height-FH)-h)>>1)+"px",
                             width:width+"px",
                             height:h+"px"
                         });
@@ -557,19 +559,17 @@ void main() {
                     else {
                         const height = (w/Info.W)*(Info.H-FH);
                         Object.assign(canvas.style,{
-                            left:((window.innerWidth-w)>>1)+"px",
-                            top:(((window.innerHeight-FH)-height)>>1)+"px",
+                            left:((stage.width-w)>>1)+"px",
+                            top:(((stage.height-FH)-height)>>1)+"px",
                             width:w+"px",
                             height:height+"px",
                         });
                     }
-                    stage.width  = w;
-                    stage.height = h;
                 }
             }
             
             window.addEventListener("resize",(e)=>{ stage.reset(); });
-            setInterval((e)=>{ if(stage.resize()) resize(); },33);
+            setInterval((e)=>{if(stage.resize()) resize();},33);
             resize();
             
             const Type = {
@@ -679,7 +679,6 @@ void main() {
                                 update.uniforms.u_cursor = [0.5,0.5];
                                 onUpdate();
                                 onDraw();
-                                
                                 
                             }
                         };
