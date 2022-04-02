@@ -212,7 +212,7 @@
                     }
                 }
                 
-                const size = encodePNG(buf.buffer.byteOffset,W,H,4,png.buffer.byteOffset);
+                const size = encodePNG(buf.buffer.byteOffset,Info.W,Info.H,4,png.buffer.byteOffset);
                 if(size>0) {
                     const bytes = png.buffer.slice(0,size);
                     const link = crel("a");
@@ -458,7 +458,7 @@ void main() {
                     if(contextmenu.classList.contains("appear")) {
                         if(hitTest(x,y,contextmenu.getBoundingClientRect())) {
                             onDraw();
-                            gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,BUFFER);
+                            gl.readPixels(0,0,Info.W,Info.H,gl.RGBA,gl.UNSIGNED_BYTE,BUFFER);
                             download();
                         }
                         contextmenu.classList.remove("appear");
@@ -591,12 +591,12 @@ void main() {
                         const img = new Image();
                         img.onload = (e)=>{
                             gl.bindTexture(gl.TEXTURE_2D,jpg);
-                            if(W<=img.naturalWidth&&H<=img.naturalHeight) {
-                                replace(img,W,H);
+                            if(Info.W<=img.naturalWidth&&Info.H<=img.naturalHeight) {
+                                replace(img,Info.W,Info.H);
                             }
                             else {
-                                replace(BLACK,W,H);
-                                replace(img,CLIP(img.naturalWidth,W),CLIP(img.naturalHeight,H));
+                                replace(BLACK,Info.W,Info.H);
+                                replace(img,CLIP(img.naturalWidth,Info.W),CLIP(img.naturalHeight,Info.H));
                             }
                             gl.bindTexture(gl.TEXTURE_2D,null);
                             onDraw();
@@ -615,10 +615,10 @@ void main() {
                             const bytes = new Uint8Array(arrayBuffer);
                             if(bytes.length<=png.length) {
                                 png.buffer.set(bytes);
-                                if(decodePNG(buf.buffer.byteOffset,W,H,png.buffer.byteOffset,bytes.length)) {
-                                    replaceMap(xy.buffer.byteOffset,W,H,buf.buffer.byteOffset);
+                                if(decodePNG(buf.buffer.byteOffset,Info.W,Info.H,png.buffer.byteOffset,bytes.length)) {
+                                    replaceMap(xy.buffer.byteOffset,Info.W,Info.H,buf.buffer.byteOffset);
                                     gl.bindTexture(gl.TEXTURE_2D,map);
-                                    gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,W,H,gl.RG,gl.FLOAT,xy.buffer);
+                                    gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,Info.W,Info.H,gl.RG,gl.FLOAT,xy.buffer);
                                     gl.bindTexture(gl.TEXTURE_2D,null);
                                     frame = -1;
                                     update.uniforms.u_prevCursor = [0.5,0.5];
