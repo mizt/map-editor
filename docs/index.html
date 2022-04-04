@@ -127,7 +127,7 @@
             margin-top:-56px;
             margin-left:-56px;
             border-radius:50%;
-            border:8px solid rgb(64,64,64);
+            border:8px solid rgba(255,255,255,0.2);
             border-top-color:transparent;
             animation: spinner 1s linear infinite;
         }
@@ -817,12 +817,10 @@ void main() {
             DEFAULT_IMAGE.onload = ()=>{
                 Info.W = DEFAULT_IMAGE.naturalWidth;
                 Info.H = DEFAULT_IMAGE.naturalHeight;
-                //initialize();
+                initialize();
             }
             DEFAULT_IMAGE.src = DEFAULT_URL;
         }
-                
-        
         
     </script>
 </body>
