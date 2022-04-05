@@ -3,6 +3,8 @@
 No Warranty.    
 This Application (including the Data) is provided to you “as is,” and you agree to use it at your own risk.
 
+Noncommercial use only.
+
 [Demo](https://mizt.github.io/map-editor/)
 
 * Drop JPEG to change image.
