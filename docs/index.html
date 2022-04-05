@@ -70,11 +70,33 @@
             color:#CCC;
         }
         
+        #footer form {
+            display:inline-block;
+            vertical-align:top;
+        }
+        
+        #footer div.slider {
+            display:inline-block;
+            vertical-align:top;
+            width:128px;
+            margin:10px 16px;
+            height:12px;
+            background:#CCC;
+            cursor:pointer;
+        }
+        
+        #footer div.slider .bar {
+            width:100%;
+            height:100%;
+            background:#FFF;
+        }
+        
         #footer label {
             padding:0 0 0 12px;
             margin-left:8px;
             font-size:14px;
             line-height:32px;
+            height:32px;
             display:inline-block;
             cursor:pointer;
             position:relative;
@@ -157,8 +179,6 @@
         }
             
         const DEFAULT_URL = (MJPEG)?"plasticbag.mov":"duster.jpg";
-            
-        console.log(MJPEG);
         
         class U8 {
             constructor(len) {
@@ -370,15 +390,21 @@ in vec2 v_texCoord;
 uniform sampler2D u_jpg; 
 uniform sampler2D u_map; 
 uniform int u_type;
+uniform float u_wet;
 uniform vec2 u_resolution;
 out vec4 FragColor;
 void main() {
+
+    vec2 uv = vec2(v_texCoord.x,1.0-v_texCoord.y);
+    vec2 map = 21845.0+uv*u_resolution*8.0;
+        
+    ivec2 xy = ivec2(map*(1.0-u_wet)+(65535.0*texture(u_map,uv).rg)*u_wet);
+
     if(u_type==0) {
-        ivec2 xy = ivec2(65535.0*texture(u_map,vec2(v_texCoord.x,1.0-v_texCoord.y)).rg)-21845;
+        xy-=21845;
         FragColor = texture(u_jpg,(vec2(xy)/8.0)/(u_resolution-1.0));
     }
     else {
-        ivec2 xy = ivec2(65535.0*texture(u_map,vec2(v_texCoord.x,1.0-v_texCoord.y)).rg);
         FragColor = vec4(
             float(xy.x&0xFF)/255.0,
             float(xy.y>>8)/255.0,
@@ -390,6 +416,7 @@ void main() {
             draw.program = twgl.createProgramFromSources(gl,[VS,draw.fs]);
             draw.info = twgl.createProgramInfoFromProgram(gl,draw.program);
             draw.uniforms = {
+                u_wet:1.0,
                 u_resolution:[Info.W,Info.H]
             };
             
@@ -439,7 +466,8 @@ void main() {
             const mouse = {
                 x:0,
                 y:0,
-                click:false
+                click:false,
+                target:null
             };
             
             const onMouseDown = (px,py)=>{
@@ -453,9 +481,6 @@ void main() {
             
             let then = Date.now();
             const onMouseMove = (px,py)=>{
-                const current = Date.now();
-                if(current-then<16.6) return; 
-                then = current;
                 const rect = canvas.getBoundingClientRect();
                 const x = (px*(Info.W/rect.width))>>0;
                 const y = (py*(Info.H/rect.height))>>0;
@@ -471,6 +496,38 @@ void main() {
                 onDraw();
                 mouse.click = false;
             };
+            
+            const Type = {
+                RGB:0,
+                MAP:1
+            };
+            
+            const input = [
+                crel("input",{"id":"RGB","type":"radio","name":"mode","checked":true}),
+                crel("input",{"id":"MAP","type":"radio","name":"mode","checked":false})
+            ];
+            
+            input[Type.RGB].onchange=(e)=>{
+                draw.uniforms.u_type = Type.RGB;
+                onDraw();
+            };
+            
+            input[Type.MAP].onchange=(e)=>{
+                draw.uniforms.u_type = Type.MAP;
+                onDraw();
+            };
+            
+            const footer = crel("div",{"id":"footer"});
+            crel(document.body,
+                crel(footer,
+                    crel("form",
+                        input[Type.RGB],
+                        crel("label",{"for":"RGB"},"RGB"),
+                        input[Type.MAP],
+                        crel("label",{"for":"MAP"},"MAP")
+                    )
+                )
+            );
             
             if("ontouchstart" in document.documentElement) {
                 
@@ -526,6 +583,10 @@ void main() {
                     
                 });
                 
+                const slider = crel("div",{"class":"slider"},crel("div",{"class":"bar"}));
+                crel(footer,slider);
+
+                
                 window.addEventListener("mousedown",(e)=>{
                     const x = e.pageX;
                     const y = e.pageY;
@@ -537,6 +598,19 @@ void main() {
                         }
                         contextmenu.classList.remove("appear");
                     }
+                    else if(hitTest(x,y,slider.getBoundingClientRect())) {
+                        mouse.click = true;
+                        mouse.targrt=slider;
+                        
+                        const rect = slider.getBoundingClientRect();
+                        let value = e.pageX-rect.left;
+                        if(value<=0) value = 0;
+                        else if(value>=rect.width) value = rect.width;
+                        value/=rect.width;
+                        slider.querySelector(".bar").style.width = ((value*100)>>0)+"%";
+                        draw.uniforms.u_wet = value;
+                        onDraw();
+                    }
                     else {
                         const rect = canvas.getBoundingClientRect();
                         if(hitTest(x,y,rect)) {
@@ -546,14 +620,33 @@ void main() {
                 });
                 
                 window.addEventListener("mousemove",(e)=>{
+                    
                     if(mouse.click) {
-                        const rect = canvas.getBoundingClientRect();
-                        onMouseMove(e.pageX-rect.left,e.pageY-rect.top);
+                        
+                        const current = Date.now();
+                        if(current-then<16.6) return; 
+                        then = current;
+                        
+                        if(mouse.targrt===slider) {
+                            const rect = slider.getBoundingClientRect();
+                            let value = e.pageX-rect.left;
+                            if(value<=0) value = 0;
+                            else if(value>=rect.width) value = rect.width;
+                            value/=rect.width;
+                            slider.querySelector(".bar").style.width = ((value*100)>>0)+"%";
+                            draw.uniforms.u_wet = value;
+                            onDraw();
+                        }
+                        else {
+                            const rect = canvas.getBoundingClientRect();
+                            onMouseMove(e.pageX-rect.left,e.pageY-rect.top);
+                        }
                     }
                 });
                 
                 window.addEventListener("mouseup",(e)=>{
                     if(mouse.click) onMouseUp();
+                    mouse.targrt = null;
                 });
             }
             
@@ -610,38 +703,6 @@ void main() {
                     }
                 }
             }
-            
-                
-            const Type = {
-                RGB:0,
-                MAP:1
-            };
-            
-            const input = [
-                crel("input",{"id":"RGB","type":"radio","name":"mode","checked":true}),
-                crel("input",{"id":"MAP","type":"radio","name":"mode","checked":false})
-            ];
-            
-            input[Type.RGB].onchange=(e)=>{
-                draw.uniforms.u_type = Type.RGB;
-                onDraw();
-            };
-            
-            input[Type.MAP].onchange=(e)=>{
-                draw.uniforms.u_type = Type.MAP;
-                onDraw();
-            };
-            
-            crel(document.body,
-                crel(crel("div",{"id":"footer"}),
-                    crel("form",
-                        input[Type.RGB],
-                        crel("label",{"for":"RGB"},"RGB"),
-                        input[Type.MAP],
-                        crel("label",{"for":"MAP"},"MAP")
-                    )
-                )
-            );
             
             const replace = (src,w,h)=>{
                 gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,src);
