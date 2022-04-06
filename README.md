@@ -7,6 +7,8 @@ Noncommercial use only.
 
 #### [Demo](https://mizt.github.io/map-editor/)
 
+Works in newer browsers.
+
 ##### Usage:
 * Dragging  canvas distort map image.
 * Drop JPEG to change image.
