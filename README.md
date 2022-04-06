@@ -5,13 +5,18 @@ This Application (including the Data) is provided to you “as is,” and you ag
 
 Noncommercial use only.
 
-[Demo](https://mizt.github.io/map-editor/)
-
+#### [Demo](https://mizt.github.io/map-editor/)
 * Drop JPEG to change image.
 * Drop PNG to change map image.
 * Right click to download distorted image / map image.
 
-#### Map
+#### [Demo (MJPEG)](https://mizt.github.io/map-editor/?mode=MJPEG)
+##### Note: 
+* Safari on M1 Mac recommended.
+* Loads [plasticbag.mov](https://github.com/mizt/map-editor/blob/main/docs/plasticbag.mov) that is 25.3MB.
+[MJPEG specification](https://mizt.github.io/map-editor/specifications/?id=MJPEG)
+
+#### Map specification
 
 ```
 #define MAP_SCALE 8.0
