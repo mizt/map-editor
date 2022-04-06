@@ -63,7 +63,6 @@
             margin:0;
             padding:0;
             -webkit-user-select:none;
-            cursor:default;
             font-size:14px;
             font-family:Helvetica,sans-serif;
             letter-spacing:0.025em;
@@ -495,6 +494,7 @@ void main() {
             const onMouseUp = ()=>{
                 onDraw();
                 mouse.click = false;
+                document.body.style.cursor = "default";
             };
             
             const Type = {
@@ -599,8 +599,12 @@ void main() {
                         contextmenu.classList.remove("appear");
                     }
                     else if(hitTest(x,y,slider.getBoundingClientRect())) {
+
                         mouse.click = true;
+                        document.body.style.cursor = "pointer";
+
                         mouse.targrt=slider;
+                        
                         
                         const rect = slider.getBoundingClientRect();
                         let value = e.pageX-rect.left;
