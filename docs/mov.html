@@ -112,7 +112,9 @@
 								if(frame>=totalFrames) frame = 0;
 								imageData.data.set(data.buffer);
 								context.putImageData(imageData,0,0);
-								fps.textContent = (1.0/(Date.now()-then)*1000.0).toFixed(2) +" FPS";
+								let FPS = (1.0/(Date.now()-then)*1000.0);
+								if(FPS>=30) FPS = 30.0
+								fps.textContent = FPS.toFixed(2) +" FPS";
 							}
 						},33);
 					}
