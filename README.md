@@ -20,7 +20,8 @@ Works in newer browsers.
 * Safari on M1 Mac recommended.
 * Load [plasticbag.mov](https://github.com/mizt/map-editor/blob/main/docs/plasticbag.mov) that is 25.3MB.
 
-[MJPEG specification](https://mizt.github.io/map-editor/specifications/?id=MJPEG)
+[MJPEG specification](https://mizt.github.io/map-editor/specifications/?id=MJPEG)    
+[test](https://mizt.github.io/map-editor/mov.html)
 
 #### Map specification
 
