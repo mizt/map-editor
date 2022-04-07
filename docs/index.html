@@ -33,23 +33,25 @@
         
         #contextmenu {
             display:none;
+            overflow:hidden;
+            white-space:nowrap;
             color:#222;
             background:#EEE;
             font-size:12px;
             letter-spacing:0.075em;
-            line-height:36px;
+            line-height:24px;
             position:fixed;
             z-index:1024;
             left:0px;
             top:0px;
-            padding:0px 12px;
+            padding:8px 12px;
             border-radius:4px;
             box-shadow:6px 6px 12px rgba(0,0,0,0.1);
             cursor:pointer;
         }
         
         #contextmenu.appear {
-            display:block;
+            display:inline-block;
         }
         
         #footer {
@@ -729,6 +731,24 @@ void main() {
                             if(MOV.seek>=MOV.totalFrames) MOV.seek = 0;
                         }
                     }
+                    else if(MOV.type===1) {
+                        if(Module.cwrap("update","number",["number","number","number"])(MOV.src.buffer.byteOffset,MOV.seek,1)) {
+                            
+                            replaceMap(XY.buffer.byteOffset,Info.W,Info.H,MOV.src.buffer.byteOffset);
+                            gl.bindTexture(gl.TEXTURE_2D,map);
+                            gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,Info.W,Info.H,gl.RG,gl.FLOAT,XY.buffer);
+                            gl.bindTexture(gl.TEXTURE_2D,null);
+                            
+                            frame = -1;
+                            update.uniforms.u_prevCursor = [0.5,0.5];
+                            update.uniforms.u_cursor = [0.5,0.5];
+                            onUpdate();
+                            onDraw();
+                            
+                            MOV.seek++;
+                            if(MOV.seek>=MOV.totalFrames) MOV.seek = 0;
+                        }
+                    }
                 }
             },33);
             
@@ -748,10 +768,10 @@ void main() {
                         img.onload = (e)=>{
                                 
                             if(Info.W==img.naturalWidth&&Info.H==img.naturalHeight) {
-                                    gl.bindTexture(gl.TEXTURE_2D,jpg);
-                                    replace(img,Info.W,Info.H);
-                                    gl.bindTexture(gl.TEXTURE_2D,null);
-                                    onDraw();
+                                gl.bindTexture(gl.TEXTURE_2D,jpg);
+                                replace(img,Info.W,Info.H);
+                                gl.bindTexture(gl.TEXTURE_2D,null);
+                                onDraw();
                             }
                             else {
                                     
@@ -842,6 +862,55 @@ void main() {
                             console.log(e);
                         });
                     }
+                    else if(file.type==="video/quicktime") {
+                        
+                        if(MOV.active===false) {
+                            
+                            fetch(url).then((response)=>{
+                                if(response.ok) {
+                                    return response.arrayBuffer();
+                                }
+                                else {
+                                    throw new Error(response.status);
+                                }
+                            }).then((arrayBuffer)=>{
+                                
+                                MOV.bytes = new Uint8Array(arrayBuffer);
+                                MOV.data = new U8(MOV.bytes.length);
+                                MOV.data.buffer.set(MOV.bytes);
+                                if(Module.cwrap("setup","number",["number","number"])(MOV.data.buffer.byteOffset,MOV.data.length)) {
+                                    
+                                    MOV.width = Module.cwrap("width","number",[])();
+                                    MOV.height = Module.cwrap("height","number",[])();
+                                    MOV.type = Module.cwrap("type","number",[])();
+                                    
+                                    if(MOV.width===Info.W&&MOV.height===Info.H) {
+                                        if(MOV.type===0) {
+                                            console.log("MJPEG");
+                                        }
+                                        else if(MOV.type===1) {
+                                            MOV.totalFrames = Module.cwrap("length","number",[])();
+                                            MOV.seek = 0;
+                                            MOV.src = new U8((MOV.width*MOV.height)<<2);
+                                            MOV.active = true;
+                                        }
+                                        else {
+                                            console.log("unknown format");
+                                        }
+                                    }
+                                }
+                                
+                            }).catch((e)=>{
+                                console.log(e);
+                            })
+
+                        }
+                        
+                    }
+                    else {
+                        console.log("unknown filetype: "+file.type);
+
+                    }
                 }
             });
         }
@@ -867,7 +936,7 @@ void main() {
                     MOV.totalFrames = Module.cwrap("length","number",[])();
                     MOV.seek = 0;
                     MOV.src = new U8((MOV.width*MOV.height)<<2);
-                    if(Module.cwrap("update","number",["number","number"])(MOV.src.buffer.byteOffset,MOV.seek)) {
+                    if(Module.cwrap("update","number",["number","number","number"])(MOV.src.buffer.byteOffset,MOV.seek,0)) {
                         MOV.active = true;
                         MOV.seek++;
                         if(MOV.seek>=MOV.totalFrames) MOV.seek = 0;
