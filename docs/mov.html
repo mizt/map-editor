@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>MOV</title>
+		<script src="./libs.js"></script>
+		<style>
+			
+			* {
+				margin:0;
+				padding:0;
+				-webkit-user-drag:none;
+				-webkit-user-select:none;
+				cursor:default;
+			}
+			
+			body {
+				overflow:hidden;
+				font-size:12px;
+				line-height:16px;
+			}
+			
+			canvas {
+				vertical-align:top;
+			}
+			
+			div#log {
+				position:absolute;
+				top:10px;
+				left:12px;
+				font-family:Helvetica,sans-serif;
+				color:#FFF;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<script>
+			
+			class U8 {
+				constructor(len) {
+					this.length = len;
+					this.bytes = Module._malloc(len);
+					this.buffer = new Uint8Array(Module.HEAPU8.buffer,this.bytes,len);
+				}
+				cleanup() {
+					Module._free(this.bytes);
+					this.buffer = null;
+				}
+			};
+			
+			const MOV_URL = "plasticbag.mov"; 
+			fetch(MOV_URL).then((response)=>{
+				if(response.ok) {
+					return response.arrayBuffer();
+				}
+				else {
+					throw new Error(response.status);
+				}
+			}).then((arrayBuffer)=>{
+				const bytes = new Uint8Array(arrayBuffer);
+				const MOV = new U8(bytes.length);
+				MOV.buffer.set(bytes);
+				if(Module.cwrap("setup","number",["number","number"])(MOV.buffer.byteOffset,MOV.length)) {
+					const width = Module.cwrap("width","number",[])();
+					const height = Module.cwrap("height","number",[])();
+					const totalFrames = Module.cwrap("length","number",[])();
+					const data = new U8((width*height)<<2);
+					const canvas = document.createElement("canvas");
+					canvas.width = width;
+					canvas.height = height;
+					document.body.appendChild(canvas);
+					const context = canvas.getContext("2d");
+					const imageData = context.getImageData(0,0,width,height);
+					const info = document.createElement("p");
+					info.textContent = width+"×"+height+" ("+(totalFrames)+")";
+					const type = Module.cwrap("type","number",[])();
+					const codec = document.createElement("p");
+					if(type===0) {
+						codec.textContent = "JPEG";
+					}
+					else if(type===1) {
+						codec.textContent = "PNG";
+					}
+					else {
+						codec.textContent = "unknown";
+					}
+					const fps = document.createElement("p");
+					const div = document.createElement("div");
+					div.id = "log";
+					div.appendChild(info);
+					div.appendChild(codec);
+					div.appendChild(fps);
+					document.body.appendChild(div);
+					let frame = 0;
+					setInterval((e)=>{
+						let then = Date.now();
+						if(Module.cwrap("update","number",["number","number"])(data.buffer.byteOffset,frame)) {
+							frame++;
+							if(frame>=totalFrames) frame = 0;
+							imageData.data.set(data.buffer);
+							context.putImageData(imageData,0,0);
+							fps.textContent = (1.0/(Date.now()-then)*1000.0).toFixed(2) +" ms";
+						}
+					},33);
+				}
+			});
+			
+		</script>
+	</body>
+</html>
