@@ -50,7 +50,17 @@
 				}
 			};
 			
-			const MOV_URL = "map.mov"; //"plasticbag.mov"; 
+			let PNG = false;
+			const params = new URLSearchParams(window.location.search);
+			if(params.has("mode")) {
+				console.log(params.get("mode"));
+				if(params.get("mode")=="PNG") {
+					PNG = true;
+				}
+			}
+			
+			const MOV_URL = (PNG)?"map.mov":"plasticbag.mov";
+			
 			fetch(MOV_URL).then((response)=>{
 				if(response.ok) {
 					return response.arrayBuffer();
