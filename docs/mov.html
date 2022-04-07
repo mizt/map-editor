@@ -18,6 +18,7 @@
 				overflow:hidden;
 				font-size:12px;
 				line-height:16px;
+				background:#808080;
 			}
 			
 			canvas {
@@ -49,7 +50,7 @@
 				}
 			};
 			
-			const MOV_URL = "plasticbag.mov"; 
+			const MOV_URL = "map.mov"; //"plasticbag.mov"; 
 			fetch(MOV_URL).then((response)=>{
 				if(response.ok) {
 					return response.arrayBuffer();
@@ -93,10 +94,10 @@
 					div.appendChild(fps);
 					document.body.appendChild(div);
 					let frame = 0;
-					if(type===0) { // Currently supports MJPEG only
+					if(type===0||type===1) {
 						setInterval((e)=>{
 							let then = Date.now();
-							if(Module.cwrap("update","number",["number","number"])(data.buffer.byteOffset,frame)) {
+							if(Module.cwrap("update","number",["number","number"])(data.buffer.byteOffset,frame,type)) {
 								frame++;
 								if(frame>=totalFrames) frame = 0;
 								imageData.data.set(data.buffer);

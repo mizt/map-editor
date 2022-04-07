@@ -719,8 +719,8 @@ void main() {
                 resize();
                 
                 if(MOV.active) {
-                    if(draw.uniforms.u_type===Type.RGB) {
-                        if(Module.cwrap("update","number",["number","number"])(MOV.src.buffer.byteOffset,MOV.seek)) {
+                    if(MOV.type===0&&draw.uniforms.u_type===Type.RGB) {
+                        if(Module.cwrap("update","number",["number","number","number"])(MOV.src.buffer.byteOffset,MOV.seek,0)) {
                             gl.bindTexture(gl.TEXTURE_2D,jpg);
                             replace(MOV.src.buffer,Info.W,Info.H);
                             gl.bindTexture(gl.TEXTURE_2D,null);
@@ -863,6 +863,7 @@ void main() {
                 if(Module.cwrap("setup","number",["number","number"])(MOV.data.buffer.byteOffset,MOV.data.length)) {
                     MOV.width = Module.cwrap("width","number",[])();
                     MOV.height = Module.cwrap("height","number",[])();
+                    MOV.type = Module.cwrap("type","number",[])();
                     MOV.totalFrames = Module.cwrap("length","number",[])();
                     MOV.seek = 0;
                     MOV.src = new U8((MOV.width*MOV.height)<<2);
