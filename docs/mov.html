@@ -93,16 +93,18 @@
 					div.appendChild(fps);
 					document.body.appendChild(div);
 					let frame = 0;
-					setInterval((e)=>{
-						let then = Date.now();
-						if(Module.cwrap("update","number",["number","number"])(data.buffer.byteOffset,frame)) {
-							frame++;
-							if(frame>=totalFrames) frame = 0;
-							imageData.data.set(data.buffer);
-							context.putImageData(imageData,0,0);
-							fps.textContent = (1.0/(Date.now()-then)*1000.0).toFixed(2) +" ms";
-						}
-					},33);
+					if(type===0) { // Currently supports MJPEG only
+						setInterval((e)=>{
+							let then = Date.now();
+							if(Module.cwrap("update","number",["number","number"])(data.buffer.byteOffset,frame)) {
+								frame++;
+								if(frame>=totalFrames) frame = 0;
+								imageData.data.set(data.buffer);
+								context.putImageData(imageData,0,0);
+								fps.textContent = (1.0/(Date.now()-then)*1000.0).toFixed(2) +" ms";
+							}
+						},33);
+					}
 				}
 			});
 			
