@@ -24,6 +24,14 @@ Works in newer browsers.
 [test](https://mizt.github.io/map-editor/mov.html)
 
 #### Map specification
+##### [Demo (PNG Sequence)](https://mizt.github.io/map-editor/?mode=PNG)
+
+##### Note: 
+
+* Safari on M1 Mac recommended.
+* Load [map.mov](https://github.com/mizt/map-editor/blob/main/docs/map.mov) that is 10.0MB.
+
+[test](https://mizt.github.io/map-editor/mov.html?mode=PNG)
 
 ```
 #define MAP_SCALE 8.0
@@ -38,3 +46,8 @@ for(int i=0; i<height; i++) {
 	}
 }
 ```
+
+
+#### [Demo (Loop)](https://mizt.github.io/map-editor/loop.html)
+
+Still image is converted into video using motion vectors.
