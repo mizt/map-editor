@@ -174,13 +174,16 @@
         const params = new URLSearchParams(window.location.search);
         if(params.has("mode")) {
             console.log(params.get("mode"));
-            if(params.get("mode")=="MJPEG") {
+            if(params.get("mode")==="MJPEG") {
                 MJPEG = true;
+            }
+            else if(params.get("mode")==="debug") {
+                debug = true;
             }
         }
             
-        const DEFAULT_URL = (MJPEG)?"plasticbag.mov":"duster.jpg";
-        
+        const DEFAULT_URL = (MJPEG)?"plasticbag.mov":(debug)?"color.jpg":"duster.jpg";
+            
         class U8 {
             constructor(len) {
                 this.length = len;
